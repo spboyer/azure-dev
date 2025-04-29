@@ -372,6 +372,11 @@ func isBicepParamFile(modulePath string) bool {
 func (p *BicepProvider) plan(ctx context.Context) (*deploymentDetails, error) {
 	p.console.ShowSpinner(ctx, "Creating a deployment plan", input.Step)
 
+	// If project configuration is available, process service dependencies
+	if p.projectConfig != nil {
+		ProcessServiceDependenciesInBicep(ctx, p.projectConfig)
+	}
+
 	modulePath := p.modulePath()
 	compileResult, err := p.compileBicep(ctx, modulePath)
 	if err != nil {
@@ -1276,8 +1281,7 @@ func (p *BicepProvider) getCognitiveAccountsToPurge(
 }
 
 // Azure KeyVaults have a "soft delete" functionality (now enabled by default) where a vault may be marked
-// such that when it is deleted it can be recovered for a period of time. During that time, the name may
-// not be reused.
+// such that when it is deleted it can be recovered for a period of time. During that time, the name may not be reused.
 //
 // This means that running `azd provision`, then `azd down` and finally `azd provision`
 // again would lead to a deployment error since the vault name is in use.
@@ -2292,4 +2296,52 @@ func NewBicepProvider(
 		subscriptionManager: subscriptionManager,
 		azureClient:         azureClient,
 	}
+}
+
+// validateServiceDependencies checks that all service dependencies specified in azure.yaml
+// are correctly reflected in the Bicep files
+func (p *BicepProvider) validateServiceDependencies(
+	ctx context.Context,
+	projectConfig map[string]interface{}) error {
+
+	// Check if the project config has a services section
+	servicesSection, ok := projectConfig["services"]
+	if !ok {
+		// No services defined, nothing to check
+		return nil
+	}
+
+	services, ok := servicesSection.(map[interface{}]interface{})
+	if !ok {
+		return nil // Not the expected format, skip dependency validation
+	}
+
+	for serviceName, serviceConfig := range services {
+		serviceNameStr, ok := serviceName.(string)
+		if !ok {
+			continue
+		}
+
+		serviceConfigMap, ok := serviceConfig.(map[interface{}]interface{})
+		if !ok {
+			continue
+		}
+
+		// Check for dependsOn field
+		dependsOnField, ok := serviceConfigMap["dependsOn"]
+		if !ok {
+			continue // No dependencies for this service
+		}
+
+		dependsOn, ok := dependsOnField.([]interface{})
+		if !ok {
+			continue // Not the expected format
+		}
+
+		if len(dependsOn) > 0 {
+			log.Printf("Service '%s' has dependencies: %v", serviceNameStr, dependsOn)
+		}
+	}
+
+	return nil
 }

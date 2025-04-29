@@ -423,3 +423,54 @@ func GetCmdProvisionHelpDescription(c *cobra.Command) string {
 		formatHelpNote("Azure subscription: The Azure subscription where your resources will be deployed."),
 	})
 }
+
+// processServiceDependencies analyzes service dependencies from the project config
+// and logs information and warnings about any issues found
+func (p *ProvisionAction) processServiceDependencies(ctx context.Context) {
+	// Count total dependencies
+	dependencyCount := 0
+	serviceDepMap := make(map[string][]string)
+
+	// Collect all service dependencies
+	for serviceName, serviceConfig := range p.projectConfig.Services {
+		if serviceConfig.DependsOn != nil && len(serviceConfig.DependsOn) > 0 {
+			dependencyCount += len(serviceConfig.DependsOn)
+			serviceDepMap[serviceName] = serviceConfig.DependsOn
+		}
+	}
+
+	// No dependencies to check
+	if dependencyCount == 0 {
+		return
+	}
+
+	// Check for dependency issues (services that don't exist)
+	var issues []string
+	for serviceName, dependencies := range serviceDepMap {
+		for _, depName := range dependencies {
+			if _, exists := p.projectConfig.Services[depName]; !exists {
+				issues = append(issues, fmt.Sprintf("Service '%s' depends on '%s', but this service doesn't exist in azure.yaml",
+					serviceName, depName))
+			}
+		}
+	}
+
+	// Show warnings for issues if any
+	if len(issues) > 0 {
+		p.console.MessageUxItem(ctx, &ux.WarningMessage{
+			Description: "Service dependency issues found in azure.yaml:",
+		})
+		for _, issue := range issues {
+			p.console.Message(ctx, fmt.Sprintf(" * %s", issue))
+		}
+		p.console.MessageUxItem(ctx, &ux.WarningMessage{
+			Description: "Continuing with provisioning, but services may not be properly connected.",
+		})
+	}
+
+	// Log information about dependencies
+	log.Printf("Found %d service dependencies in azure.yaml", dependencyCount)
+	for serviceName, deps := range serviceDepMap {
+		log.Printf("Service '%s' depends on: %s", serviceName, strings.Join(deps, ", "))
+	}
+}

@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/azure/azure-dev/cli/azd/cmd/actions"
 	"github.com/azure/azure-dev/cli/azd/internal"
@@ -93,6 +94,11 @@ func (a *infraSynthAction) Run(ctx context.Context) (*actions.ActionResult, erro
 	}
 
 	a.console.WarnForFeature(ctx, infraSynthFeature)
+
+	// Process service dependencies before synthesizing
+	if err := a.processServiceDependencies(ctx); err != nil {
+		return nil, fmt.Errorf("error processing service dependencies: %w", err)
+	}
 
 	spinnerMessage := "Synthesizing infrastructure"
 
@@ -242,4 +248,73 @@ func determineDuplicates(source string, target string) ([]string, error) {
 		return nil, fmt.Errorf("enumerating template files: %w", err)
 	}
 	return duplicateFiles, nil
+}
+
+// processServiceDependencies analyzes service dependencies in the azure.yaml file
+// and logs information about the dependencies being considered during infrastructure synthesis
+func (a *infraSynthAction) processServiceDependencies(ctx context.Context) error {
+	// Count total dependencies
+	dependencyCount := 0
+	serviceDepMap := make(map[string][]string)
+
+	// Collect all service dependencies
+	for serviceName, serviceConfig := range a.projectConfig.Services {
+		if serviceConfig.DependsOn != nil && len(serviceConfig.DependsOn) > 0 {
+			dependencyCount += len(serviceConfig.DependsOn)
+			serviceDepMap[serviceName] = serviceConfig.DependsOn
+		}
+	}
+
+	// Check for dependency issues (services that don't exist)
+	var issues []string
+	for serviceName, dependencies := range serviceDepMap {
+		for _, depName := range dependencies {
+			if _, exists := a.projectConfig.Services[depName]; !exists {
+				issues = append(issues, fmt.Sprintf("Service '%s' depends on '%s', but this service doesn't exist in azure.yaml",
+					serviceName, depName))
+			}
+		}
+	}
+
+	// Check for cyclic dependencies
+	cycles := project.DetectCyclicDependencies(a.projectConfig)
+	for _, cycle := range cycles {
+		issues = append(issues, cycle)
+	}
+
+	// Show warnings for issues if any
+	if len(issues) > 0 {
+		a.console.MessageUxItem(ctx, &ux.WarningMessage{
+			Description: "Service dependency issues found in azure.yaml:",
+		})
+		for _, issue := range issues {
+			a.console.Message(ctx, fmt.Sprintf(" * %s", issue))
+		}
+		a.console.MessageUxItem(ctx, &ux.WarningMessage{
+			Description: "Continuing with infrastructure synthesis, but generated infrastructure may not properly reflect dependencies.",
+		})
+	}
+
+	// Log information about dependencies if they exist
+	if dependencyCount > 0 {
+		a.console.Message(ctx, fmt.Sprintf("Found %d service dependencies to process", dependencyCount))
+
+		// Display dependency information
+		for serviceName, deps := range serviceDepMap {
+			a.console.Message(ctx, fmt.Sprintf("Service '%s' depends on: %s",
+				serviceName, strings.Join(deps, ", ")))
+		}
+
+		// Process dependencies based on infrastructure provider
+		provider := "bicep"
+		if a.projectConfig.Infra.Provider != "" {
+			provider = string(a.projectConfig.Infra.Provider)
+		}
+
+		if err := project.ProcessDependenciesForProvider(a.projectConfig, provider); err != nil {
+			log.Printf("Warning: Error processing service dependencies for %s: %v", provider, err)
+		}
+	}
+
+	return nil
 }

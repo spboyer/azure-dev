@@ -126,6 +126,14 @@
                     },
                     "k8s": {
                         "$ref": "#/definitions/aksOptions"
+                    },                    "dependsOn": {
+                        "type": "array",
+                        "title": "List of services this service depends on",
+                        "description": "Specifies other services in the project that this service depends on. This information can be used for generating connection strings, environment variables, and infrastructure dependencies.",
+                        "items": {
+                            "type": "string"
+                        },
+                        "uniqueItems": true
                     },
                     "config": {
                         "type": "object",
