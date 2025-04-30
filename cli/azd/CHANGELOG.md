@@ -7,6 +7,11 @@
 - [[PR#]](https://github.com/Azure/azure-dev/pull/PR#) Enhanced service dependency handling with validation in `azd provision` and `azd infra synth` commands.
 - [[PR#]](https://github.com/Azure/azure-dev/pull/PR#) Added detection of cyclic dependencies in service relationships defined in azure.yaml.
 - [[PR#]](https://github.com/Azure/azure-dev/pull/PR#) Improved infrastructure generation for service dependencies in both Bicep and Terraform providers.
+- [[PR#]](https://github.com/Azure/azure-dev/pull/PR#) Added new `azd dep` command group with `add`, `list`, and `remove` subcommands for managing service dependencies.
+
+### Breaking Changes
+
+- [[PR#]](https://github.com/Azure/azure-dev/pull/PR#) Removed `azd gen deps` command and replaced it with the new `azd dep` command group, which includes `add`, `list`, and `remove` subcommands.
 
 ### Breaking Changes
 

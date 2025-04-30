@@ -1,30 +1,36 @@
 # Service Dependencies in Azure Developer CLI
 
-Azure Developer CLI (azd) allows you to define and manage dependencies between services in your project. This document explains how to use this feature effectively.
+Azure Developer CLI (azd) allows you to define and manage dependencies between services in your project. This document explains how to use the service dependency commands effectively.
 
 ## Overview
 
-In a multi-service application, services often need to be deployed in a specific order and may require connection information from other services. The service dependency feature in azd enables you to:
+In a multi-service application, services often need to be deployed in a specific order and may require connection information from other services. The service dependency features in azd enable you to:
 
 1. Define which services depend on others
 2. Ensure correct deployment order
 3. Pass connection information between dependent services
 4. Generate appropriate infrastructure code that reflects these dependencies
 
-## Defining Service Dependencies
+## Managing Service Dependencies
 
-Service dependencies are defined in your `azure.yaml` file. You can define them manually or use the `azd gen deps` command:
+Service dependencies are defined in your `azure.yaml` file. You can manage them using the `azd dep` commands:
 
-### Using the Command Line
+### Adding Dependencies
+
+Use the `azd dep add` command to define that one service depends on another:
 
 ```bash
 # Define that the 'api' service depends on the 'database' service
-azd gen deps api database
+azd dep add api database
 ```
 
-This adds a `dependsOn` property to the `api` service in your `azure.yaml` file.
+If run without arguments, the command will prompt you to select the services interactively:
 
-### Editing azure.yaml Directly
+```bash
+azd dep add
+```
+
+This adds a `dependsOn` property to the `api` service in your `azure.yaml` file:
 
 ```yaml
 services:
@@ -35,7 +41,23 @@ services:
     dependsOn:
       - database
   
-  # A service with multiple dependencies
+  database:
+    project: ./src/database
+    language: sql
+    host: azure-sql
+```
+
+You can define multiple dependencies for a single service:
+
+```bash
+azd dep add webapp api
+azd dep add webapp database
+```
+
+This results in `webapp` depending on both `api` and `database`:
+
+```yaml
+services:
   webapp:
     project: ./src/webapp
     language: js
@@ -43,11 +65,40 @@ services:
     dependsOn:
       - api
       - database
-  
-  database:
-    project: ./src/database
-    language: sql
-    host: azure-sql
+```
+
+### Listing Dependencies
+
+To view all service dependencies in your project:
+
+```bash
+azd dep list
+```
+
+This command shows:
+- Each service in your project
+- Services it depends on
+- Services that require it
+
+To view dependencies for a specific service:
+
+```bash
+azd dep list api
+```
+
+### Removing Dependencies
+
+To remove a dependency relationship:
+
+```bash
+# Remove 'database' dependency from 'api' service
+azd dep remove api database
+```
+
+Like the add command, if run without arguments, it will prompt you interactively:
+
+```bash
+azd dep remove
 ```
 
 ## Validation and Error Checking
@@ -99,6 +150,7 @@ If you encounter issues with service dependencies:
 1. Check azd logs for warnings about missing services or cyclic dependencies
 2. Verify that your service names are consistent throughout the configuration
 3. Run `azd infra synth` to see how dependencies are translated into infrastructure code
+4. Use `azd dep list` to visualize the dependency relationships
 
 ## Best Practices
 
@@ -109,6 +161,9 @@ If you encounter issues with service dependencies:
 
 ## Related Commands
 
-* `azd gen deps` - Add service dependencies to your azure.yaml file
-* `azd provision` - Provision resources with dependency validation
-* `azd infra synth` - Generate infrastructure code with resolved dependencies
+- `azd dep add` - Define dependencies between services
+- `azd dep list` - List dependencies between services
+- `azd dep remove` - Remove dependencies between services
+- `azd provision` - Provisions Azure resources with dependency validation
+- `azd infra synth` - Synthesizes infrastructure code with dependency validation
+- `azd up` - Performs end-to-end deployment respecting service dependencies

@@ -39,6 +39,7 @@ import (
 	"github.com/azure/azure-dev/cli/azd/pkg/output"
 	"github.com/azure/azure-dev/cli/azd/pkg/output/ux"
 	"github.com/azure/azure-dev/cli/azd/pkg/password"
+	"github.com/azure/azure-dev/cli/azd/pkg/project"
 	"github.com/azure/azure-dev/cli/azd/pkg/prompt"
 	"github.com/azure/azure-dev/cli/azd/pkg/tools"
 	"github.com/azure/azure-dev/cli/azd/pkg/tools/bicep"
@@ -77,6 +78,7 @@ type BicepProvider struct {
 	portalUrlBase           string
 	subscriptionManager     *account.SubscriptionsManager
 	azureClient             *azapi.AzureClient
+	projectConfig           *project.ProjectConfig
 }
 
 // Name gets the name of the infra provider

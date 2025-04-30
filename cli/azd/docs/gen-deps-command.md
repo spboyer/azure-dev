@@ -1,4 +1,6 @@
-# Azure Developer CLI: Service Dependencies
+# Azure Developer CLI: Service Dependencies (Deprecated)
+
+> **DEPRECATED**: This command is deprecated. Please use [`azd dep add`](./dep-commands.md) instead.
 
 The `azd gen deps` command helps you define dependencies between services in your Azure Developer CLI project. When services depend on each other, Azure Developer CLI can automatically handle deployment order and connection information.
 

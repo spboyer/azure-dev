@@ -127,6 +127,7 @@ func NewRootCmd(
 	pipelineActions(root)
 	telemetryActions(root)
 	genActions(root)
+	depActions(root)
 	templatesActions(root)
 	authActions(root)
 	hooksActions(root)
