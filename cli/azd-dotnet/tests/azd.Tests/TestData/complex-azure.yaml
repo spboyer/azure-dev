@@ -1,0 +1,75 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+name: complex-app
+metadata:
+  template: todo-python-mongo@1.0
+
+services:
+  web:
+    project: ./src/web
+    language: typescript
+    host: containerapp
+    docker:
+      path: ./Dockerfile
+      context: .
+      buildArgs:
+        NODE_ENV: production
+    hooks:
+      predeploy:
+        - run: npm run build
+          shell: sh
+      postdeploy:
+        - run: npm run seed
+          continueOnError: true
+    env:
+      API_URL: ${API_URL}
+      NODE_ENV: production
+
+  api:
+    project: ./src/api
+    language: dotnet
+    host: appservice
+    module: api
+    uses:
+      - database
+    hooks:
+      predeploy:
+        - run: dotnet build --configuration Release
+    env:
+      ASPNETCORE_ENVIRONMENT: Production
+
+resources:
+  database:
+    type: db.cosmos
+    existing: false
+    uses: []
+
+  cache:
+    type: db.redis
+
+infra:
+  provider: bicep
+  path: ./infra
+  module: main
+
+pipeline:
+  provider: github
+  variables:
+    - ENVIRONMENT
+  secrets:
+    - AZURE_CREDENTIALS
+    - API_KEY
+
+state:
+  remote:
+    backend: azurerm
+    config:
+      resource_group: rg-terraform-state
+      storage_account: stterraformstate
+      container: tfstate
+
+hooks:
+  preprovision:
+    - run: echo "Starting provision"
+  postprovision:
+    - run: echo "Provision complete"

@@ -47,21 +47,24 @@
 
 #### Tasks
 
-1. **Project Service Implementation** (Days 1-3)
-   - [ ] Port `pkg/project/project_config.go`
-   - [ ] YAML parser for `azure.yaml` (YamlDotNet)
-   - [ ] Load project configuration
-   - [ ] Save project configuration
-   - [ ] Validate project structure
-   - [ ] Service detection
-   - [ ] Unit tests with sample azure.yaml files
+1. **Project Service Implementation** (Days 1-3) ✅
+   - [x] Port `pkg/project/project_config.go`
+   - [x] YAML parser for `azure.yaml` (YamlDotNet)
+   - [x] Load project configuration
+   - [x] Save project configuration
+   - [x] Validate project structure
+   - [x] Service detection
+   - [x] Unit tests with sample azure.yaml files
 
-   **Files to Create**:
-   - `src/azd.Core/Services/ProjectService.cs`
-   - `src/azd.Core/Parsers/AzureYamlParser.cs`
-   - `src/azd.Core/Validation/ProjectValidator.cs`
-   - `tests/azd.Tests/ProjectServiceTests.cs`
-   - `tests/azd.Tests/TestData/sample-azure.yaml`
+   **Files Created**:
+   - `src/azd.Core/Models/ProjectConfig.cs` (significantly expanded) ✅
+   - `src/azd.Core/Services/ProjectService.cs` ✅
+   - `src/azd.Core/Parsers/AzureYamlParser.cs` ✅
+   - `src/azd.Core/Validation/ProjectValidator.cs` ✅
+   - `tests/azd.Tests/ProjectServiceTests.cs` ✅
+   - `tests/azd.Tests/TestData/simple-azure.yaml` ✅
+   - `tests/azd.Tests/TestData/complex-azure.yaml` ✅
+   - `tests/azd.Tests/TestData/multiservice-azure.yaml` ✅
 
    **Go Reference**: `cli/azd/pkg/project/project_config.go`
 

@@ -1,0 +1,46 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+name: multiservice-app
+
+services:
+  frontend:
+    project: ./frontend
+    language: typescript
+    host: containerapp
+    docker:
+      path: ./frontend/Dockerfile
+    uses:
+      - api
+      - cache
+
+  api:
+    project: ./api
+    language: dotnet
+    host: appservice
+    uses:
+      - database
+      - storage
+
+  worker:
+    project: ./worker
+    language: python
+    host: containerapp
+    uses:
+      - queue
+      - database
+
+resources:
+  database:
+    type: db.postgres
+
+  cache:
+    type: db.redis
+
+  storage:
+    type: storage
+
+  queue:
+    type: messaging.servicebus
+
+infra:
+  provider: bicep
