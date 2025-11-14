@@ -1,7 +1,7 @@
 # Azure Developer CLI - .NET 10 Conversion Implementation Plan
 
-**Status**: Foundation Complete (10-15%)  
-**Remaining**: 85-90% of functionality  
+**Status**: Week 2 Complete - Core Services (15-20%)  
+**Remaining**: 80-85% of functionality  
 **Target Timeline**: 14-21 weeks  
 **Last Updated**: November 14, 2025
 
@@ -39,11 +39,12 @@
 
    **Go Reference**: `cli/azd/pkg/config/`
 
-### Week 2: Project & Environment Management
+### Week 2: Project & Environment Management ✅
 
 **Priority**: CRITICAL  
 **Effort**: 5 days  
-**Owner**: Core Team
+**Owner**: Core Team  
+**Status**: Complete
 
 #### Tasks
 
@@ -68,22 +69,22 @@
 
    **Go Reference**: `cli/azd/pkg/project/project_config.go`
 
-2. **Environment Management** (Days 4-5)
-   - [ ] Port `pkg/environment/` package
-   - [ ] Environment creation (`azd env new`)
-   - [ ] Environment selection (`azd env select`)
-   - [ ] Environment listing (`azd env list`)
-   - [ ] Environment values (`azd env get-values`)
-   - [ ] .env file handling
-   - [ ] Environment secrets management
-   - [ ] Unit tests
+2. **Environment Management** (Days 4-5) ✅
+   - [x] Port `pkg/environment/` package
+   - [x] Environment creation (`azd env new`)
+   - [x] Environment selection (`azd env select`)
+   - [x] Environment listing (`azd env list`)
+   - [x] Environment values (`azd env get-values`)
+   - [x] .env file handling
+   - [x] Environment secrets management
+   - [x] Unit tests
 
-   **Files to Create**:
-   - `src/azd.Core/Services/IEnvironmentService.cs`
-   - `src/azd.Core/Services/EnvironmentService.cs`
-   - `src/azd.Core/Storage/EnvironmentStore.cs`
-   - `src/azd/Commands/EnvCommands.cs`
-   - `tests/azd.Tests/EnvironmentServiceTests.cs`
+   **Files Created**:
+   - `src/azd.Core/Services/IEnvironmentService.cs` ✅
+   - `src/azd.Core/Services/EnvironmentService.cs` ✅
+   - `src/azd.Core/Storage/EnvironmentStore.cs` ✅
+   - `src/azd/Commands/EnvCommands.cs` ✅
+   - `tests/azd.Tests/EnvironmentServiceTests.cs` ✅
 
    **Go Reference**: `cli/azd/pkg/environment/`
 
