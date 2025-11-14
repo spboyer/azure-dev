@@ -1,0 +1,40 @@
+# .NET build outputs
+bin/
+obj/
+*.dll
+*.exe
+*.pdb
+*.user
+*.suo
+*.cache
+
+# Visual Studio / Rider
+.vs/
+.vscode/
+.idea/
+*.csproj.user
+*.sln.DotSettings.user
+
+# Test Results
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+
+# Build logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Azure
+.azure/
+
+# User-specific
+*.DotSettings.user
