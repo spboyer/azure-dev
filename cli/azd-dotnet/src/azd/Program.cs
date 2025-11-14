@@ -10,6 +10,7 @@ using Azure.Dev.Cli.Telemetry;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using OpenTelemetry.Exporter;
 
 namespace Azure.Dev.Cli;
 
@@ -101,9 +102,10 @@ internal class Program
                 // Add OpenTelemetry
                 services.AddOpenTelemetry()
                     .WithTracing(builder => builder
-                        .AddSource("Azure.Dev.Cli")
-                        .AddHttpClientInstrumentation()
-                        .AddOtlpExporter());
+                        .AddSource("Azure.Dev.Cli"));
+                        // TODO: Add instrumentation and exporter when compatible versions are available
+                        // .AddHttpClientInstrumentation()
+                        // .AddOtlpExporter());
             })
             .ConfigureLogging((context, logging) =>
             {

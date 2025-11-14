@@ -57,32 +57,33 @@ public class BicepProvider : IInfrastructureProvider
             // TODO: Compile Bicep to ARM template
             // This would require running 'az bicep build' or using Bicep .NET SDK
 
-            // Create deployment
+            // TODO: Create deployment - requires Bicep compilation first
             var deploymentName = $"azd-{DateTime.UtcNow:yyyyMMddHHmmss}";
-            var deployment = new ArmDeploymentContent(new ArmDeploymentProperties(ArmDeploymentMode.Incremental)
-            {
-                // Template would be set here after compilation
-            });
+            // var deployment = new ArmDeploymentContent(new ArmDeploymentProperties(ArmDeploymentMode.Incremental)
+            // {
+            //     // Template would be set here after compilation
+            // });
 
-            // Start deployment
-            var deploymentOperation = await resourceGroup.GetArmDeployments()
-                .CreateOrUpdateAsync(
-                    Azure.WaitUntil.Completed,
-                    deploymentName,
-                    deployment,
-                    cancellationToken);
+            // TODO: Start deployment - requires template compilation first
+            // var deploymentOperation = await resourceGroup.GetArmDeployments()
+            //     .CreateOrUpdateAsync(
+            //         Azure.WaitUntil.Completed,
+            //         deploymentName,
+            //         deployment,
+            //         cancellationToken);
+            //
+            // var result = deploymentOperation.Value;
 
-            var result = deploymentOperation.Value;
-
-            // Extract outputs
+            // Extract outputs (placeholder until deployment is implemented)
             var outputs = new Dictionary<string, string>();
-            if (result.Data.Properties.Outputs != null)
-            {
-                foreach (var output in result.Data.Properties.Outputs)
-                {
-                    outputs[output.Key] = output.Value.ToString() ?? string.Empty;
-                }
-            }
+            // TODO: Extract outputs from deployment result
+            // if (result.Data.Properties.Outputs != null)
+            // {
+            //     foreach (var output in result.Data.Properties.Outputs)
+            //     {
+            //         outputs[output.Key] = output.Value.ToString() ?? string.Empty;
+            //     }
+            // }
 
             var duration = DateTime.UtcNow - startTime;
 
@@ -169,17 +170,18 @@ public class BicepProvider : IInfrastructureProvider
             var outputs = new Dictionary<string, string>();
             if (latestDeployment.Data.Properties.Outputs != null)
             {
-                foreach (var output in latestDeployment.Data.Properties.Outputs)
-                {
-                    outputs[output.Key] = output.Value.ToString() ?? string.Empty;
-                }
+                // TODO: Parse outputs properly once deployment is implemented
+                // foreach (var output in latestDeployment.Data.Properties.Outputs)
+                // {
+                //     outputs[output.Key] = output.Value.ToString() ?? string.Empty;
+                // }
             }
 
             return new DeploymentState
             {
-                Status = latestDeployment.Data.Properties.ProvisioningState.ToString(),
+                Status = latestDeployment.Data.Properties.ProvisioningState?.ToString() ?? "Unknown",
                 Outputs = outputs,
-                LastDeployedAt = latestDeployment.Data.Properties.Timestamp
+                LastDeployedAt = latestDeployment.Data.Properties.Timestamp?.DateTime
             };
         }
         catch
