@@ -17,26 +17,25 @@
 
 #### Tasks
 
-1. **Fix Package References** (Day 1)
-   - [ ] Add missing Azure.ResourceManager packages
-   - [ ] Fix Azure.Identity version conflicts
-   - [ ] Update System.CommandLine to stable version if available
-   - [ ] Test all projects compile without errors
-   - [ ] Run `dotnet build` successfully
+1. **Fix Package References** (Day 1) ✅
+   - [x] Add missing Azure.ResourceManager packages
+   - [x] Fix Azure.Identity version conflicts
+   - [x] Update System.CommandLine to stable version if available
+   - [x] Test all projects compile without errors
+   - [x] Run `dotnet build` successfully
 
-2. **Configuration Service** (Days 2-3)
-   - [ ] Port `pkg/config/config.go`
-   - [ ] Implement user config directory (`~/.azd/`)
-   - [ ] File-based config persistence (JSON)
-   - [ ] Environment variable support
-   - [ ] Config get/set/unset/list operations
-   - [ ] Unit tests
+2. **Configuration Service** (Days 2-3) ✅
+   - [x] Port `pkg/config/config.go`
+   - [x] Implement user config directory (`~/.azd/`)
+   - [x] File-based config persistence (JSON)
+   - [x] Environment variable support
+   - [x] Config get/set/unset/list operations
+   - [x] Unit tests
 
-   **Files to Create**:
-   - `src/azd.Core/Services/IConfigService.cs`
-   - `src/azd.Core/Services/ConfigService.cs`
-   - `src/azd.Core/Models/ConfigOptions.cs`
-   - `tests/azd.Tests/ConfigServiceTests.cs`
+   **Files Created**:
+   - `src/azd.Core/Services/IConfigService.cs` ✅
+   - `src/azd.Core/Services/ConfigService.cs` ✅
+   - `tests/azd.Tests/ConfigServiceTests.cs` ✅
 
    **Go Reference**: `cli/azd/pkg/config/`
 
