@@ -272,11 +272,13 @@ func (m *manager) loadOrInitEnvironment(ctx context.Context, environmentName str
 	if environmentName != "" && !IsValidEnvironmentName(environmentName) {
 		fmt.Fprintf(
 			m.console.Handles().Stdout,
-			"environment name '%s' is invalid (it should contain only alphanumeric characters and hyphens)\n",
-			environmentName)
+			"environment name '%s' is invalid. %s\n",
+			environmentName,
+			EnvironmentNameValidationMessage)
 		return nil, false, fmt.Errorf(
-			"environment name '%s' is invalid (it should contain only alphanumeric characters and hyphens)",
-			environmentName)
+			"environment name '%s' is invalid. %s",
+			environmentName,
+			EnvironmentNameValidationMessage)
 	}
 
 	// No environment name, no default environment set.
@@ -581,7 +583,8 @@ func (m *manager) ensureValidEnvironmentName(ctx context.Context, spec *Spec) er
 
 func invalidEnvironmentNameMsg(environmentName string) string {
 	return fmt.Sprintf(
-		"environment name '%s' is invalid (it should contain only alphanumeric characters and hyphens)\n",
+		"environment name '%s' is invalid. %s\n",
 		environmentName,
+		EnvironmentNameValidationMessage,
 	)
 }
