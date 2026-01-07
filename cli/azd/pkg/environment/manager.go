@@ -409,8 +409,9 @@ func (m *manager) Get(ctx context.Context, name string) (*Environment, error) {
 	// Validate environment name
 	if !IsValidEnvironmentName(name) {
 		return nil, fmt.Errorf(
-			"environment name '%s' is invalid. Valid names can only contain: a-z, A-Z, 0-9, -, (, ), _, . (max 64 chars)",
+			"environment name '%s' is invalid. %s",
 			name,
+			EnvironmentNameValidationMessage,
 		)
 	}
 

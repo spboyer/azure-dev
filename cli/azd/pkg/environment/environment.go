@@ -136,6 +136,9 @@ var EnvironmentNameRegexp = regexp.MustCompile(`^[a-zA-Z0-9-\(\)_\.]{1,64}$`)
 // The maximum length of an environment name.
 var EnvironmentNameMaxLength = 64
 
+// EnvironmentNameValidationMessage is the message describing valid environment name constraints
+const EnvironmentNameValidationMessage = "Valid names can only contain: a-z, A-Z, 0-9, -, (, ), _, . (max 64 chars)"
+
 func IsValidEnvironmentName(name string) bool {
 	return EnvironmentNameRegexp.MatchString(name)
 }
