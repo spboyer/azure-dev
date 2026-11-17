@@ -1,0 +1,22 @@
+schemaVersion: "2.0"
+name: foundry-skill-impact--with-skill--gpt-5.6-terra--foundry-authoring
+scenario: azure-dev-vally-migration
+description: Can an agent correctly edit Foundry service entries in azure.yaml -- migrating a legacy agent definition, and adding a second agent across several turns?
+config:
+  executor: copilot-sdk
+  model: gpt-5.6-terra
+  judge_model: gpt-5.6-luna
+  trials_per_task: 2
+  timeout_seconds: 480
+  parallel: false
+  inject_skill_body: false
+  skill_directories:
+    - ..\..\..\skills\.external\microsoft-foundry
+metrics:
+  - name: task_completion
+    weight: 1
+    threshold: 1
+    description: Native strict grader verdict; original suite thresholds are reported separately.
+tasks:
+  - tasks\migrate-legacy-agent-definition.yaml
+  - tasks\incremental-second-agent.yaml

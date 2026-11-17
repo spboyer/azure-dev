@@ -1,0 +1,29 @@
+id: deploy-python-webapp
+name: deploy-python-webapp
+inputs:
+  prompt: I want to deploy a Python web app to Azure. What's the best way to do that?
+graders:
+  - type: program
+    name: mentions azd as an option
+    config:
+      command: node
+      args:
+        - graders\vally-check.mjs
+        - '{"type":"output-matches","name":"mentions azd as an option","config":{"pattern":"azd (init|up|provision|deploy)"}}'
+      timeout: 30
+  - type: prompt
+    name: "judge: reasonable, correctly-sequenced guidance"
+    config:
+      mode: independent
+      continue_session: false
+      prompt: |-
+        Judge the recorded agent work, not the quality of these evaluation instructions.
+
+        Use the supplied recorded task, final output, and conversation/tool evidence. Do not execute commands or change files.
+
+        1. Suggests azd as a way to stand up and deploy the app, with azd init before azd up or before azd provision/deploy
+
+        2. If azd is suggested, the steps are in a sensible order (initialize before provisioning/deploying)
+
+        Call exactly one of set_waza_grade_pass or set_waza_grade_fail once, with a specific explanation.
+      evidence_context: {}

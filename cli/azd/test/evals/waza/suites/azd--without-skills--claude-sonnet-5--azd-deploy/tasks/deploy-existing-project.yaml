@@ -1,0 +1,36 @@
+id: deploy-existing-project
+name: deploy-existing-project
+inputs:
+  prompt: I already have my project set up with azure.yaml. How do I deploy it?
+  files:
+    - path: azure.yaml
+      content: "name: sample-app\r\nmetadata:\r\n  template: sample-app@0.0.1\r\nservices:\r\n  web:\r\n    project: ./src/web\r\n    host: appservice\r\n    language: js\r\n"
+    - path: .azure/config.json
+      content: "{\r\n    \"defaultEnvironment\": \"dev\"\r\n}\r\n"
+    - path: .azure/dev/.env
+      content: "AZURE_ENV_NAME=\"dev\"\r\nAZURE_LOCATION=\"eastus2\"\r\nAZURE_SUBSCRIPTION_ID=\"00000000-0000-0000-0000-000000000000\"\r\nAZURE_RESOURCE_GROUP=\"rg-sample-dev\"\r\n"
+graders:
+  - type: program
+    name: suggests azd deploy or azd up
+    config:
+      command: node
+      args:
+        - graders\vally-check.mjs
+        - '{"type":"output-matches","name":"suggests azd deploy or azd up","config":{"pattern":"azd deploy|azd up"}}'
+      timeout: 30
+  - type: prompt
+    name: "judge: does not re-suggest init or delete the resource group"
+    config:
+      mode: independent
+      continue_session: false
+      prompt: |-
+        Judge the recorded agent work, not the quality of these evaluation instructions.
+
+        Use the supplied recorded task, final output, and conversation/tool evidence. Do not execute commands or change files.
+
+        1. Suggests azd deploy (or azd up) to deploy the existing project
+
+        2. Does not re-run init or delete the resource group
+
+        Call exactly one of set_waza_grade_pass or set_waza_grade_fail once, with a specific explanation.
+      evidence_context: {}

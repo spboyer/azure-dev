@@ -1,0 +1,34 @@
+id: deploy-node-api
+name: deploy-node-api
+inputs:
+  prompt: I have a Node.js Express API and I want to deploy it to Azure. What's the best way to do that?
+  files:
+    - path: package.json
+      content: "{\r\n    \"name\": \"sample-express-api\",\r\n    \"version\": \"1.0.0\",\r\n    \"private\": true,\r\n    \"main\": \"index.js\",\r\n    \"scripts\": {\r\n        \"start\": \"node index.js\"\r\n    },\r\n    \"dependencies\": {\r\n        \"express\": \"^4.19.2\"\r\n    }\r\n}\r\n"
+    - path: index.js
+      content: "const express = require(\"express\");\r\nconst app = express();\r\n\r\napp.get(\"/\", (req, res) => {\r\n  res.send(\"Hello from the sample API\");\r\n});\r\n\r\napp.listen(3000, () => {\r\n  console.log(\"Server listening on port 3000\");\r\n});\r\n"
+graders:
+  - type: program
+    name: mentions azd as an option
+    config:
+      command: node
+      args:
+        - graders\vally-check.mjs
+        - '{"type":"output-matches","name":"mentions azd as an option","config":{"pattern":"azd (init|up|provision|deploy)"}}'
+      timeout: 30
+  - type: prompt
+    name: "judge: reasonable, correctly-sequenced guidance"
+    config:
+      mode: independent
+      continue_session: false
+      prompt: |-
+        Judge the recorded agent work, not the quality of these evaluation instructions.
+
+        Use the supplied recorded task, final output, and conversation/tool evidence. Do not execute commands or change files.
+
+        1. Suggests azd as a way to deploy the API to Azure, with azd init before azd up or before azd provision/deploy
+
+        2. If azd is suggested, the steps are in a sensible order (initialize before provisioning/deploying)
+
+        Call exactly one of set_waza_grade_pass or set_waza_grade_fail once, with a specific explanation.
+      evidence_context: {}

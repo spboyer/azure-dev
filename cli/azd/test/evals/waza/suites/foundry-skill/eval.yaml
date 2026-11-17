@@ -1,0 +1,22 @@
+schemaVersion: "2.0"
+name: foundry-skill
+scenario: azure-dev-vally-migration
+description: Does the official microsoft-foundry skill route to the right sub-skill, and does the agent tag azd commands the way the skill requires?
+config:
+  executor: copilot-sdk
+  model: gpt-5.6-terra
+  judge_model: gpt-5.6-luna
+  trials_per_task: 2
+  timeout_seconds: 300
+  parallel: false
+  inject_skill_body: false
+  skill_directories:
+    - ..\..\..\skills\.external\microsoft-foundry
+metrics:
+  - name: task_completion
+    weight: 1
+    threshold: 1
+    description: Native strict grader verdict; original suite thresholds are reported separately.
+tasks:
+  - tasks\route-optimize-instructions.yaml
+  - tasks\rule-user-agent-inline.yaml

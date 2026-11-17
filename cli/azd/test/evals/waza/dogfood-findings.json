@@ -1,0 +1,110 @@
+{
+  "date": "2026-11-16",
+  "waza_release": "v0.41.0",
+  "azure_dev_source": "bb7f49a33ca8814612da888b3af3b928d470a091",
+  "platform": "Windows amd64",
+  "publication": "Sanitized reports published with explicit approval; raw evaluation evidence remains local.",
+  "published_reports": [
+    "https://github.com/microsoft/waza/issues/1057",
+    "https://github.com/microsoft/waza/issues/1056",
+    "https://github.com/microsoft/waza/issues/898#issuecomment-6927624174"
+  ],
+  "primary_run": {
+    "directory": "results/dogfood-authenticated-2026-11-16",
+    "configurations": 19,
+    "task_trials": 68,
+    "trials_per_task": 1,
+    "native_passed": 34,
+    "native_assertion_failures": 13,
+    "native_infrastructure_errors": 21,
+    "infrastructure_categories": {
+      "frozen_evidence": 17,
+      "workspace_capture": 4
+    },
+    "explicit_model_alias": {
+      "gpt-5.6-terra": "gpt-6.1-terra"
+    },
+    "original_definition_trials": 183,
+    "original_trial_counts_executed": false,
+    "interpretation": "A complete one-trial dogfood of every suite and matrix cell, not a statistically reliable model/skill comparison."
+  },
+  "findings": [
+    {
+      "id": "WAZA-DOGFOOD-001",
+      "severity": "high",
+      "classification": "confirmed-product-false-positive",
+      "existing_issue": "https://github.com/microsoft/waza/issues/898",
+      "confirmation_comment": "https://github.com/microsoft/waza/issues/898#issuecomment-6927624174",
+      "title": "Independent prompt judging rejects public Git commit SHAs as Azure OpenAI credentials",
+      "observed_in": ["azd-deploy/deploy-node-api", "azd-deploy/lifecycle-full", "azd-deploy/lifecycle-teardown"],
+      "actual": "A successful actor execution becomes an infrastructure error before independent judging: judge evidence: required capture is incomplete or redacted.",
+      "cause": "The default azure_openai_key detector matches any word-bounded 32-64 hexadecimal characters. Public Microsoft Learn gitcommit and git_commit_id metadata in web_fetch results matches it. Required tool evidence is discarded as redacted_required and Verify rejects the bundle.",
+      "not_the_cause": ["missing judge authentication after GH_TOKEN was supplied", "zero tool calls", "Azure resource creation", "Windows selected-file capture"],
+      "source": [
+        "microsoft/waza@v0.41.0:internal/snapshot/redaction.go",
+        "microsoft/waza@v0.41.0:internal/judgeevidence/evidence.go",
+        "microsoft/waza@v0.41.0:internal/graders/evidence_prompt_grader.go"
+      ],
+      "minimal_repro": "Run repros/public-commit-sha/eval.yaml with the pinned release. The fixture contains an explicitly synthetic public commit ID, not a secret. Executed locally: actor replied exactly Documentation inspected; exit 2, azure_openai_key match_count 2, tool_events redacted_required, no independent judgment.",
+      "evidence": [
+        "results/dogfood-authenticated-2026-11-16/dashboard/azd-deploy.json",
+        "results/public-sha-repro/results.json",
+        "results/public-sha-repro/run.log"
+      ],
+      "expected": "Public source-control identifiers in documentation should not be classified as credentials; actual credential protection must remain fail-closed."
+    },
+    {
+      "id": "WAZA-DOGFOOD-002",
+      "severity": "high",
+      "classification": "confirmed-repository-evaluation-blocker",
+      "related_closed_issue": "https://github.com/microsoft/waza/issues/830",
+      "published_issue": "https://github.com/microsoft/waza/issues/1057",
+      "title": "Repository-backed evaluations fail workspace capture on an unrelated large tracked recording",
+      "observed_in": ["azd-grpc-contracts/inspect-contract-state", "azd-grpc-contracts/add-preview-field", "azd-grpc-contracts/graduate-beta-service"],
+      "actual": "Actor completes repository inspection, then no graders run because repository/cli/azd/test/functional/testdata/recordings/Test_CLI_Up_Down_GoFuncApp.yaml is 17085977 bytes and exceeds the fixed 16777216-byte per-file capture limit.",
+      "cause": "Default post-execution capture scans the repository even when the evaluation asks only for contract guidance and no diff grader requests that recording. The limits are fixed at 16 MiB per file and 64 MiB total.",
+      "source": ["microsoft/waza@v0.41.0:internal/execution/workspace_capture.go"],
+      "minimal_repro": "From this directory run the pinned release against suites/azd-grpc-contracts/eval.yaml with --task add-preview-field --trials 1 --model gpt-6.1-terra --judge-model gpt-6.1-terra.",
+      "evidence": [
+        "results/dogfood-authenticated-2026-11-16/logs/azd-grpc-contracts.log",
+        "results/dogfood-authenticated-2026-11-16/dashboard/azd-grpc-contracts.json"
+      ],
+      "expected": "Allow explicit bounded capture selection/exclusions or fail preflight for an unsupported repository, without silently pretending a partial capture is complete."
+    },
+    {
+      "id": "WAZA-DOGFOOD-003",
+      "severity": "medium",
+      "classification": "confirmed-dashboard-diagnostic-loss",
+      "published_issue": "https://github.com/microsoft/waza/issues/1056",
+      "title": "Dashboard drops task infrastructure error messages and expands errored rows to no details",
+      "observed_in": ["azd-deploy/deploy-node-api", "azd-grpc-contracts/add-preview-field"],
+      "actual": "Raw native results contain runs[0].error_msg, but the run-detail API TaskResult has no error field. If graders never ran, graderResults is empty and expanding the error row reveals nothing. Users cannot discover the capture-limit cause from the dashboard.",
+      "source": [
+        "microsoft/waza@v0.41.0:internal/webapi/types.go:TaskResult",
+        "microsoft/waza@v0.41.0:internal/webapi/store.go:outcomeToDetail",
+        "microsoft/waza@v0.41.0:web/src/components/RunDetail.tsx:TaskRow"
+      ],
+      "minimal_repro": "Serve the persisted dogfood dashboard directory with v0.41.0, open an errored repository-backed run, and expand a task row. Compare its API response with the raw run.error_msg.",
+      "evidence": [
+        "results/dogfood-authenticated-2026-11-16/dashboard/azd-grpc-contracts.json",
+        "waza-azure-dev-deploy-results.png"
+      ],
+      "expected": "Expose appropriately sanitized per-trial infrastructure errors through the API and render them even when there are no grader results."
+    }
+  ],
+  "source_suite_observations": [
+    {
+      "task": "foundry-skill/route-optimize-instructions",
+      "classification": "preserved-source-Windows-portability-issue",
+      "observation": "The agent did read the observe sub-skill, but the original source pattern observe/observe\\.md$ does not match the recorded Windows path ending in observe\\observe.md.",
+      "parity": "The original grader also matches raw argument strings without separator normalization. The conversion retains that source assertion rather than weakening it or misclassifying it as a Waza defect."
+    }
+  ],
+  "limitations_not_filed_as_bugs": [
+    "Selected-file independent judge capture is explicitly unsupported on Windows in this release.",
+    "Independent evidence judges require an explicit supported authentication environment variable or custom provider rather than the actor CLI's cached login.",
+    "Native task pass/fail is stricter than the original suite thresholds, which are kept as a separate compatibility report.",
+    "The source gpt-5.6-terra model is unavailable in the live catalog; the local run explicitly aliases it to gpt-6.1-terra.",
+    "The HTTP dashboard started after the first result continued to expose only that one run while twelve result files existed on disk; restart it after external CLI runs finish before capturing the final overview."
+  ]
+}

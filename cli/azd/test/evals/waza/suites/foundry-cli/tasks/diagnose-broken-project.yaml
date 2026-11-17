@@ -1,0 +1,58 @@
+id: diagnose-broken-project
+name: diagnose-broken-project
+inputs:
+  prompt: Something isn't right with this project and I can't remember where I left it. Work out what state it's in and what I'd need to do next. Don't change anything yet -- I just want the diagnosis.
+  files:
+    - path: azure.yaml
+      content: "# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json\r\n\r\n# Deliberately incomplete: no services at all, so there is no `host: azure.ai.agent`\r\n# entry for the Foundry tooling to find. Used to exercise `azd ai agent doctor`.\r\nname: half-configured-agent\r\n"
+graders:
+  - type: program
+    name: runs the doctor diagnostic
+    config:
+      command: node
+      args:
+        - graders\vally-check.mjs
+        - '{"type":"tool-calls","name":"runs the doctor diagnostic","config":{"required":[{"name":"^(bash|powershell)$","command":"azd ai agent doctor(?!\\S)(?!.*--help)"}]}}'
+      timeout: 30
+  - type: program
+    name: no destructive or mutating commands
+    config:
+      command: node
+      args:
+        - graders\vally-check.mjs
+        - '{"type":"tool-calls","name":"no destructive or mutating commands","config":{"disallowed":[{"name":"^(bash|powershell)$","command":"azd (down|up|provision|deploy)(?!\\S)"},{"name":"^(bash|powershell)$","command":"azd ai agent (delete|init)(?!\\S)"},{"name":"^(bash|powershell)$","command":"rm\\s+-[rRf]|Remove-Item"}]}}'
+      timeout: 30
+  - type: program
+    name: identifies the missing agent service
+    config:
+      command: node
+      args:
+        - graders\vally-check.mjs
+        - '{"type":"output-matches","name":"identifies the missing agent service","config":{"pattern":"(?i)\\b(no|missing|not|without)\\b[^.\\n]{0,40}(azure\\.ai\\.agent|agent service)"}}'
+      timeout: 30
+  - type: program
+    name: diagnosis did not modify the project
+    config:
+      command: node
+      args:
+        - graders\vally-check.mjs
+        - '{"type":"diff-empty","name":"diagnosis did not modify the project","baseline":[{"path":"azure.yaml","content":"# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json\r\n\r\n# Deliberately incomplete: no services at all, so there is no `host: azure.ai.agent`\r\n# entry for the Foundry tooling to find. Used to exercise `azd ai agent doctor`.\r\nname: half-configured-agent\r\n"}]}'
+      timeout: 30
+  - type: prompt
+    name: "judge: accurate diagnosis with sensible next steps"
+    config:
+      mode: independent
+      continue_session: false
+      prompt: |-
+        Judge the recorded agent work, not the quality of these evaluation instructions.
+
+        Use the supplied recorded task, final output, and conversation/tool evidence. Do not execute commands or change files.
+
+        1. Runs the CLI's own diagnostic rather than eyeballing azure.yaml
+
+        2. Reports that there is no azure.ai.agent service configured
+
+        3. Leaves the project untouched, as asked
+
+        Call exactly one of set_waza_grade_pass or set_waza_grade_fail once, with a specific explanation.
+      evidence_context: {}

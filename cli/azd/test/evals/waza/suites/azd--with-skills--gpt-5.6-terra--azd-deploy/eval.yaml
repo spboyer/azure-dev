@@ -1,0 +1,28 @@
+schemaVersion: "2.0"
+name: azd-skills-baseline--with-skills--gpt-5.6-terra--azd-deploy
+scenario: azure-dev-vally-migration
+description: Evals of realistic situations, with actual projects or code to work with.
+config:
+  executor: copilot-sdk
+  model: gpt-5.6-terra
+  judge_model: gpt-5.6-luna
+  trials_per_task: 3
+  timeout_seconds: 300
+  parallel: false
+  inject_skill_body: false
+  skill_directories:
+    - ..\..\..\skills\azd
+metrics:
+  - name: task_completion
+    weight: 1
+    threshold: 1
+    description: Native strict grader verdict; original suite thresholds are reported separately.
+tasks:
+  - tasks\deploy-node-api.yaml
+  - tasks\deploy-python-webapp.yaml
+  - tasks\environment-create-staging.yaml
+  - tasks\environment-delete-env.yaml
+  - tasks\environment-switch-env.yaml
+  - tasks\lifecycle-full.yaml
+  - tasks\lifecycle-teardown.yaml
+  - tasks\deploy-existing-project.yaml

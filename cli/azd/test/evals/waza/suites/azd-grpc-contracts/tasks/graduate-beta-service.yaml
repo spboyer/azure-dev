@@ -1,0 +1,62 @@
+id: graduate-beta-service
+name: graduate-beta-service
+inputs:
+  prompt: Plan how to graduate an existing beta-only gRPC service into stable v1 without breaking extensions already compiled against v1beta. Include SDK API concerns and exact validation commands. Do not edit files.
+  repos:
+    - type: worktree
+      source: ..\..\..\..\..
+      commit: HEAD
+      dest: repository
+  workdir: repository
+graders:
+  - type: skill_invocation
+    name: azd grpc contracts skill activated
+    config:
+      required_skills:
+        - azd-grpc-contracts
+      mode: any_order
+      allow_extra: true
+  - type: program
+    name: preserves beta clients
+    config:
+      command: node
+      args:
+        - graders\vally-check.mjs
+        - '{"type":"output-matches","name":"preserves beta clients","config":{"pattern":"(?is)(keep|retain|preserve).*v1beta.*(route|client|service)"}}'
+      timeout: 30
+  - type: program
+    name: flags accessor compatibility
+    config:
+      command: node
+      args:
+        - graders\vally-check.mjs
+        - '{"type":"output-matches","name":"flags accessor compatibility","config":{"pattern":"(?is)(accessor|return type).*(source.break|breaking)"}}'
+      timeout: 30
+  - type: program
+    name: graduation plan did not modify the repository
+    config:
+      command: node
+      args:
+        - graders\vally-check.mjs
+        - '{"type":"diff-empty","name":"graduation plan did not modify the repository","repository":"repository"}'
+      timeout: 30
+  - type: prompt
+    name: "judge: safe graduation plan"
+    config:
+      mode: independent
+      continue_session: false
+      prompt: |-
+        Judge the recorded agent work, not the quality of these evaluation instructions.
+
+        Use the supplied recorded task, final output, and conversation/tool evidence. Do not execute commands or change files.
+
+        1. Copies the compatible wire shape into v1 while retaining the v1beta service and route
+
+        2. Moves default behavior to the stable implementation and regenerates the adapter
+
+        3. Flags changing an existing Go accessor return type as a source compatibility decision
+
+        4. Includes proto-version-compatibility and historical Buf checks
+
+        Call exactly one of set_waza_grade_pass or set_waza_grade_fail once, with a specific explanation.
+      evidence_context: {}

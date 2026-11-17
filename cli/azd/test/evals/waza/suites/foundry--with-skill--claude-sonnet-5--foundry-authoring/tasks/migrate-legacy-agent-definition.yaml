@@ -1,0 +1,57 @@
+id: migrate-legacy-agent-definition
+name: migrate-legacy-agent-definition
+inputs:
+  prompt: |
+    When I run azd it warns that my agent is using a deprecated configuration shape
+    and that I should move the definition onto the service entry itself.
+
+    Update azure.yaml so the warning goes away. The agent has to keep behaving
+    exactly as it does today.
+  files:
+    - path: azure.yaml
+      content: "# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json\r\n\r\n# Legacy shape: the agent definition sits in a nested `config:` block instead of inline\r\n# on the service entry. azd still loads this, but prints a deprecation warning.\r\nname: docs-assistant\r\n\r\nservices:\r\n  ai-project:\r\n    host: azure.ai.project\r\n    deployments:\r\n      - name: gpt-4o-mini\r\n        model:\r\n          format: OpenAI\r\n          name: gpt-4o-mini\r\n          version: \"2024-07-18\"\r\n        sku:\r\n          name: GlobalStandard\r\n          capacity: 30\r\n\r\n  docs-agent:\r\n    host: azure.ai.agent\r\n    project: ./src/docs-agent\r\n    uses:\r\n      - ai-project\r\n    config:\r\n      kind: hosted\r\n      name: docs-agent\r\n      description: Answers questions about our internal documentation.\r\n      environmentVariables:\r\n        - name: LOG_LEVEL\r\n          value: info\r\n"
+    - path: src/docs-agent/main.py
+      content: "import os\r\n\r\nfrom fastapi import FastAPI\r\n\r\napp = FastAPI()\r\n\r\n\r\n@app.get(\"/health\")\r\ndef health() -> dict[str, str]:\r\n    return {\"status\": \"ok\", \"log_level\": os.environ.get(\"LOG_LEVEL\", \"warning\")}\r\n"
+graders:
+  - type: program
+    name: "the nested config: block is gone"
+    config:
+      command: node
+      args:
+        - graders\vally-check.mjs
+        - '{"type":"file-not-matches","name":"the nested config: block is gone","config":{"path":"azure.yaml","pattern":"(?m)^\\s+config:\\s*$"}}'
+      timeout: 30
+  - type: program
+    name: the definition was hoisted onto the service entry
+    config:
+      command: node
+      args:
+        - graders\vally-check.mjs
+        - '{"type":"file-matches","name":"the definition was hoisted onto the service entry","config":{"path":"azure.yaml","pattern":"(?m)^    kind:\\s*hosted"}}'
+      timeout: 30
+  - type: program
+    name: environment variables survived the move
+    config:
+      command: node
+      args:
+        - graders\vally-check.mjs
+        - '{"type":"file-matches","name":"environment variables survived the move","config":{"path":"azure.yaml","pattern":"(?i)LOG_LEVEL[\\s\\S]{0,30}?info"}}'
+      timeout: 30
+  - type: prompt
+    name: "judge: complete migration with no behavior change"
+    config:
+      mode: independent
+      continue_session: false
+      prompt: |-
+        Judge the recorded agent work, not the quality of these evaluation instructions.
+
+        Use the supplied recorded task, final output, and conversation/tool evidence. Do not execute commands or change files.
+
+        1. The agent definition is inline on the azure.ai.agent service entry
+
+        2. The nested config: block is gone, with no empty config: key left behind
+
+        3. Every setting from the old block is preserved, including environmentVariables
+
+        Call exactly one of set_waza_grade_pass or set_waza_grade_fail once, with a specific explanation.
+      evidence_context: {}

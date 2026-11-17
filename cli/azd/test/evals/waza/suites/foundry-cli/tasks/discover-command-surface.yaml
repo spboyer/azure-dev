@@ -1,0 +1,47 @@
+id: discover-command-surface
+name: discover-command-surface
+inputs:
+  prompt: I've got azd installed with the Microsoft Foundry extensions. What can I actually do with it from the terminal? Find out from the CLI itself rather than guessing, and give me a short summary of the command groups.
+graders:
+  - type: program
+    name: actually asks the CLI for help
+    config:
+      command: node
+      args:
+        - graders\vally-check.mjs
+        - '{"type":"tool-calls","name":"actually asks the CLI for help","config":{"required":[{"name":"^(bash|powershell)$","command":"azd ai[^|]*(--help|\\bhelp\\b)"}]}}'
+      timeout: 30
+  - type: program
+    name: reports real Foundry command groups
+    config:
+      command: node
+      args:
+        - graders\vally-check.mjs
+        - '{"type":"output-matches","name":"reports real Foundry command groups","config":{"pattern":"(?is)(?=.*\\btoolbox)(?=.*\\b(routine|inspector|connection))"}}'
+      timeout: 30
+  - type: program
+    name: no destructive or mutating commands
+    config:
+      command: node
+      args:
+        - graders\vally-check.mjs
+        - '{"type":"tool-calls","name":"no destructive or mutating commands","config":{"disallowed":[{"name":"^(bash|powershell)$","command":"azd (down|up|provision|deploy)(?!\\S)"},{"name":"^(bash|powershell)$","command":"azd ai agent (delete|init)(?!\\S)"},{"name":"^(bash|powershell)$","command":"rm\\s+-[rRf]|Remove-Item"}]}}'
+      timeout: 30
+  - type: prompt
+    name: "judge: grounded, accurate command summary"
+    config:
+      mode: independent
+      continue_session: false
+      prompt: |-
+        Judge the recorded agent work, not the quality of these evaluation instructions.
+
+        Use the supplied recorded task, final output, and conversation/tool evidence. Do not execute commands or change files.
+
+        1. Inspects the CLI's own help output instead of answering from memory
+
+        2. Reports real command groups that exist in the installed extensions
+
+        3. Does not invent commands that the CLI does not have
+
+        Call exactly one of set_waza_grade_pass or set_waza_grade_fail once, with a specific explanation.
+      evidence_context: {}

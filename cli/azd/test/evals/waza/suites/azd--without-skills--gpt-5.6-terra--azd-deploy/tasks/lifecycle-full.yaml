@@ -1,0 +1,22 @@
+id: lifecycle-full
+name: lifecycle-full
+inputs:
+  prompt: |
+    Walk me through setting up a new app in Azure from scratch, deploying it, and then cleaning everything up when I'm done.
+graders:
+  - type: prompt
+    name: "judge: full lifecycle in the right order"
+    config:
+      mode: independent
+      continue_session: false
+      prompt: |-
+        Judge the recorded agent work, not the quality of these evaluation instructions.
+
+        Use the supplied recorded task, final output, and conversation/tool evidence. Do not execute commands or change files.
+
+        1. Suggests azd for the full init -> provision -> deploy -> down lifecycle, in that order
+
+        2. Does not suggest tearing down (azd down) before the app has been set up and deployed
+
+        Call exactly one of set_waza_grade_pass or set_waza_grade_fail once, with a specific explanation.
+      evidence_context: {}

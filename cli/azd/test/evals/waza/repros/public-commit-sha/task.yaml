@@ -1,0 +1,23 @@
+id: public-documentation-metadata
+name: public-documentation-metadata
+inputs:
+  prompt: |
+    Read documentation.txt using a file tool. It contains synthetic public
+    documentation metadata, not a credential. Do not edit any files.
+    Reply with exactly "Documentation inspected" and do not quote the metadata.
+  files:
+    - path: documentation.txt
+      content: |
+        title: Public documentation
+        git_commit_id: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+graders:
+  - name: documentation-read
+    type: prompt
+    config:
+      mode: independent
+      continue_session: false
+      evidence_context: {}
+      prompt: |
+        Check that the recorded assistant read documentation.txt and its final
+        answer is "Documentation inspected". Call exactly one of
+        set_waza_grade_pass or set_waza_grade_fail once with a reason.

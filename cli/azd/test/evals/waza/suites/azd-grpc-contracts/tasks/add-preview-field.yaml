@@ -1,0 +1,62 @@
+id: add-preview-field
+name: add-preview-field
+inputs:
+  prompt: I want to add a v1beta-only request field to an existing stable extension service and make azd core act on it. Give me the implementation and validation plan. Do not edit files yet.
+  repos:
+    - type: worktree
+      source: ..\..\..\..\..
+      commit: HEAD
+      dest: repository
+  workdir: repository
+graders:
+  - type: skill_invocation
+    name: azd grpc contracts skill activated
+    config:
+      required_skills:
+        - azd-grpc-contracts
+      mode: any_order
+      allow_extra: true
+  - type: program
+    name: requires focused override
+    config:
+      command: node
+      args:
+        - graders\vally-check.mjs
+        - '{"type":"output-matches","name":"requires focused override","config":{"pattern":"Beta[A-Za-z]+[A-Za-z]+Override|focused beta override"}}'
+      timeout: 30
+  - type: program
+    name: keeps stable contract unchanged
+    config:
+      command: node
+      args:
+        - graders\vally-check.mjs
+        - '{"type":"output-matches","name":"keeps stable contract unchanged","config":{"pattern":"(?is)(?:(?:keep|leave).*?(?:v1.*?(?:unchanged|unmodified)|(?:preview )?field.*?out of.*?v1)|do not modify.*?v1)"}}'
+      timeout: 30
+  - type: program
+    name: planning did not modify the repository
+    config:
+      command: node
+      args:
+        - graders\vally-check.mjs
+        - '{"type":"diff-empty","name":"planning did not modify the repository","repository":"repository"}'
+      timeout: 30
+  - type: prompt
+    name: "judge: safe beta addition plan"
+    config:
+      mode: independent
+      continue_session: false
+      prompt: |-
+        Judge the recorded agent work, not the quality of these evaluation instructions.
+
+        Use the supplied recorded task, final output, and conversation/tool evidence. Do not execute commands or change files.
+
+        1. Keeps the preview field out of v1
+
+        2. Explains that unary stable adaptation discards unknown beta request fields, while streaming preserves unknown wire fields without exposing typed beta fields
+
+        3. Requires a focused beta method override and tests both stable and beta routes
+
+        4. Includes generation, cross-channel, historical compatibility, and runtime tests
+
+        Call exactly one of set_waza_grade_pass or set_waza_grade_fail once, with a specific explanation.
+      evidence_context: {}

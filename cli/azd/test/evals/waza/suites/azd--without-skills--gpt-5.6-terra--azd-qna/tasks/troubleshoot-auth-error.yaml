@@ -1,0 +1,27 @@
+id: troubleshoot-auth-error
+name: troubleshoot-auth-error
+inputs:
+  prompt: |
+    I ran azd provision and got this error:
+    ERROR: failed deploying: deploying to subscription: AADSTS70011: The provided
+    request must include a 'scope' input parameter. The provided value for the
+    input parameter 'scope' is not valid.
+    InteractiveBrowserCredential authentication failed.
+    How do I fix this?
+graders:
+  - type: program
+    name: identifies this as an auth problem
+    config:
+      command: node
+      args:
+        - graders\vally-check.mjs
+        - '{"type":"output-matches","name":"identifies this as an auth problem","config":{"pattern":"(auth|authenticat|credential|login|token)"}}'
+      timeout: 30
+  - type: program
+    name: suggests a concrete auth fix
+    config:
+      command: node
+      args:
+        - graders\vally-check.mjs
+        - '{"type":"output-matches","name":"suggests a concrete auth fix","config":{"pattern":"azd auth login|az login|azd auth logout|clear (token|cache|credential)"}}'
+      timeout: 30

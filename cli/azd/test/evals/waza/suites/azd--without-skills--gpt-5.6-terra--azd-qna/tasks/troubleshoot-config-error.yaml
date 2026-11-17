@@ -1,0 +1,25 @@
+id: troubleshoot-config-error
+name: troubleshoot-config-error
+inputs:
+  prompt: |
+    I ran azd provision and got this error:
+    ERROR: reading project: unable to parse azure.yaml:
+    yaml: line 12: did not find expected key
+    My azure.yaml was working before, but I recently edited it. What's wrong?
+graders:
+  - type: program
+    name: identifies azure.yaml as the source of a YAML syntax issue
+    config:
+      command: node
+      args:
+        - graders\vally-check.mjs
+        - '{"type":"output-matches","name":"identifies azure.yaml as the source of a YAML syntax issue","config":{"pattern":"(?s)(?=.*azure\\.yaml)(?=.*(syntax|format|indentation|parse|YAML))"}}'
+      timeout: 30
+  - type: program
+    name: gives actionable guidance
+    config:
+      command: node
+      args:
+        - graders\vally-check.mjs
+        - '{"type":"output-matches","name":"gives actionable guidance","config":{"pattern":"line 12|indent|azd init|validate|YAML (lint|valid)|check (the |your )?azure.yaml"}}'
+      timeout: 30

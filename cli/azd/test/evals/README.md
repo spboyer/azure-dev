@@ -118,6 +118,92 @@ Locally it reads your real azd config, since that's where the extensions live. T
 are read-only and destructive commands are in `disallowed` graders, but that's a guardrail,
 not a sandbox. CI installs into a job-local dir.
 
+## Side-by-side Waza dogfood
+
+`waza/` is a native Waza **v0.41.0** conversion of all seven suites and both
+experiment matrices above. Vally definitions, dependencies, and CI remain
+unchanged. Regenerate the mirror after editing the original definitions:
+
+```powershell
+cd waza
+npm ci
+npm run convert
+npm test
+$env:WAZA_BINARY = "C:\path\to\waza-windows-amd64.exe"
+# Independent judges need an explicit token; use the existing signed-in account.
+# Never print or save this value.
+$env:GH_TOKEN = gh auth token
+npm run preflight
+npm run eval
+npm run experiment:azd
+npm run experiment:foundry
+```
+
+Use the official [v0.41.0 release](https://github.com/microsoft/waza/releases/tag/v0.41.0).
+The launcher rejects other versions and checks the published Windows amd64
+SHA-256 when given an absolute binary path. Copilot authentication, the source
+models, and the Foundry extensions listed above are still required. Fetch the
+Foundry skill from the parent directory before skill-enabled runs.
+
+For a one-trial dogfood of every suite and every matrix cell:
+
+```powershell
+node scripts\run.mjs --include-experiments --trials 1
+# Only when an original model is unavailable, explicitly record its replacement:
+node scripts\run.mjs --include-experiments --trials 1 --model-alias gpt-5.6-terra=gpt-6.1-terra
+```
+
+The committed definitions retain the original models and trial counts. Model
+aliases and trial overrides are explicit run provenance, not equivalent baseline
+measurements. `--suite <name>`, `--experiment azd|foundry`, and `--task <id>` select
+smaller runs. Results, transcripts, logs, source hashes, skill provenance, and a
+separate original-threshold aggregate are saved under `waza/results/<timestamp>/`.
+Experiment runs also write `experiment-summary.json`, comparing every cell with
+the source matrix's declared skill/model baseline. Incomplete cells are not
+treated as comparable zero scores, and one-trial deltas are not significance
+tests. Recompute that derived report with
+`npm run compare -- "results\<timestamp>"`.
+Point the released dashboard at that run's `dashboard/` directory:
+
+```powershell
+& $env:WAZA_BINARY serve --results-dir "results\<timestamp>\dashboard" --port 3039 --no-browser
+```
+
+### Deliberate compatibility boundaries
+
+- Multi-turn stimuli use actual `follow_up_prompts`; zero-based Vally per-turn
+  checks become one-based Waza checkpoints. No turns are flattened.
+- Skill-off controls explicitly disable native skills. Skill-on cases load the
+  original local or fetched skill directory, without injecting its body into the
+  user prompt. Waza's ambient skill discovery is not a security sandbox.
+- Prompt judges run independently against bounded recorded task, output, and tool
+  evidence, using the original rubric and judge model. Selected-file judge capture
+  is unsupported on Windows in this release; deterministic graders still inspect
+  the actual workspace files.
+- Vally regexes with lookarounds are retained in a Node program grader rather
+  than weakened to Go's RE2 subset. The notes-summary program preserves its
+  structural, tool-use, and fractional-score checks.
+- Waza's native task verdict requires every grader to pass. The separate
+  `compatibility/` reports apply the original suite threshold to mean stimulus
+  scores; missing checks, missing tasks, or execution errors cannot pass.
+  The native dashboard verdict is not relabeled as the Vally threshold verdict.
+- Native Git fixtures require a child directory. Repository inspections run
+  inside `repository/`; the starter's note fixtures remain at the outer root
+  alongside that checkout. No fixture is overlaid into an existing native
+  worktree, which Waza cannot materialize in that order.
+- Environment variables are applied by the launcher, not unsupported task YAML.
+  Foundry CLI prompts are offline/read-only, but graders detect violations after
+  execution and are not an execution sandbox. Do not run these with production
+  credentials or grant permission to provision/delete real Azure resources.
+- Full-repository capture, live-file preservation, and dashboard behavior are
+  intentional dogfood surfaces. Record Waza failures separately from model
+  mistakes; do not replace failed real runs with mock results.
+
+Confirmed Waza-specific dogfood findings are recorded separately in
+`waza/dogfood-findings.json`, including a minimal synthetic public-commit-SHA
+reproduction. This local log does not publish private run transcripts or create
+GitHub issues.
+
 ## Useful links
 
 - Vally docs: <https://aka.ms/vally>

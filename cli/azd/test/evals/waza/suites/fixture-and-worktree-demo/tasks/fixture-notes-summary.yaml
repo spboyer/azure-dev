@@ -1,0 +1,83 @@
+id: fixture-notes-summary
+name: fixture-notes-summary
+inputs:
+  prompt: |
+    A fixture file named `team-notes.txt` exists at the root of your
+    workspace. It contains one team note per line.
+
+    1. Read `team-notes.txt`.
+    2. Count the number of items, starting with * at the beginning of their line.
+    3. Create a new file named `notes-summary.md` at the workspace root
+       containing:
+       - A first line that reads exactly: `Total notes: <N>` (where `<N>`
+         is the count you computed)
+       - One bullet per note below that, each starting with `- `
+    4. In your final chat response, repeat the exact line
+       `Total notes: <N>` verbatim (so it can be checked automatically),
+       followed by a one-sentence summary.
+
+    Do not modify any other files in the workspace.
+  files:
+    - path: team-notes.txt
+      content: |
+        * Renew the Azure subscription certificate
+        * Review the open vally eval pull request
+        * Update the AGENTS.md contributor guide
+    - path: check-summary.ts
+      content: "// Copyright (c) Microsoft Corporation.\n// Licensed under the MIT License.\n//\n// Standalone `program` grader, wired up by the `program` grader in\n// eval.yaml. \n//\n// vally sets two environment variables before spawning this process:\n//   EVALUATE_WORKSPACE    - path to the workspace root\n//   EVALUATE_GRADER_INPUT - path to a JSON file containing the GraderInput\n//\n// We print a GraderResult, as JSON, to stdout, which vally then picks up and\n// parses to produce a result. If you need to do diagnostic output, use stderr.\n//\n// Docs: https://aka.ms/vally -> Reference -> Graders -> program\n\nimport { existsSync, readFileSync } from \"node:fs\";\nimport { join } from \"node:path\";\n\nimport type { GraderInput, GraderResult } from \"@microsoft/vally/graders\";\n\nfunction subCheck(name: string, passed: boolean, evidence: string): GraderResult {\n  return { name, kind: \"code\", passed, score: passed ? 1 : 0, evidence };\n}\n\nfunction checkSummaryFile(workspace: string): GraderResult[] {\n  const summaryPath = join(workspace, \"notes-summary.md\");\n  const checks: GraderResult[] = [];\n\n  if (!existsSync(summaryPath)) {\n    checks.push(subCheck(\"summary-file-exists\", false, `${summaryPath} does not exist`));\n    return checks;\n  }\n  checks.push(subCheck(\"summary-file-exists\", true, `${summaryPath} exists`));\n\n  const lines = readFileSync(summaryPath, \"utf-8\")\n    .split(/\\r?\\n/)\n    .filter((line) => line.trim().length > 0);\n\n  // Rudimentary structural check: the first non-blank line must report a\n  // \"Total notes: <N>\" header. Unlike the text-matching graders in\n  // eval.yaml (which inspect the agent's chat output), this one verifies\n  // the *workspace file* has the right shape and internal consistency,\n  // which a plain string match can't do.\n  const headerMatch = /^Total notes:\\s*(\\d+)\\s*$/.exec(lines[0] ?? \"\");\n  checks.push(\n    subCheck(\n      \"summary-has-total-line\",\n      headerMatch != null,\n      headerMatch != null\n        ? `First line reports \"${lines[0]}\"`\n        : `Expected first line to match \"Total notes: <N>\", got ${JSON.stringify(lines[0] ?? \"\")}`,\n    ),\n  );\n\n  // The bullet count must actually match the reported total -- catches an\n  // agent that reports the right number but lists the wrong count of notes.\n  const bulletCount = lines.slice(1).filter((line) => /^-\\s+\\S/.test(line)).length;\n  const reportedTotal = headerMatch ? Number(headerMatch[1]) : undefined;\n  checks.push(\n    subCheck(\n      \"bullet-count-matches-total\",\n      reportedTotal !== undefined && bulletCount === reportedTotal,\n      `Found ${bulletCount} bullet line(s); header reported ${reportedTotal ?? \"<none>\"}`,\n    ),\n  );\n\n  return checks;\n}\n\nfunction checkAgentUsedTools(input: GraderInput): GraderResult {\n  const toolCallCount = input.trajectory?.metrics?.toolCallCount ?? 0;\n  return subCheck(\n    \"agent-used-tools\",\n    toolCallCount > 0,\n    `Trajectory recorded ${toolCallCount} tool call(s)`,\n  );\n}\n\nfunction main(): GraderResult {\n  const workspace = process.env[\"EVALUATE_WORKSPACE\"];\n  const graderInputPath = process.env[\"EVALUATE_GRADER_INPUT\"];\n  if (!workspace || !graderInputPath) {\n    throw new Error(\"EVALUATE_WORKSPACE / EVALUATE_GRADER_INPUT were not set\");\n  }\n\n  // Program graders are just simple programs - GraderInput comes in as a JSON\n  // file (path in EVALUATE_GRADER_INPUT), and GraderOutput (our results)\n  // goes on stdout.\n  const input = JSON.parse(readFileSync(graderInputPath, \"utf-8\")) as GraderInput;\n  const details = [\n    ...checkSummaryFile(workspace), \n    checkAgentUsedTools(input)\n  ];\n\n  const passed = details.every((d) => d.passed);\n  const score = details.filter((d) => d.passed).length / details.length;\n\n  return {\n    name: \"fixture-summary-check\",\n    kind: \"code\",\n    passed,\n    score,\n    evidence: passed\n      ? `All ${details.length} checks passed`\n      : `${details.filter((d) => !d.passed).length} of ${details.length} check(s) failed`,\n    details,\n  };\n}\n\ntry {\n  process.stdout.write(JSON.stringify(main()));\n} catch (err: unknown) {\n  // Never crash without a result: emit a failing GraderResult instead of an\n  // uncaught exception, so a bug in this script reads as a failed grader\n  // rather than an opaque non-zero exit code.\n  const result: GraderResult = {\n    name: \"fixture-summary-check\",\n    kind: \"code\",\n    passed: false,\n    score: 0,\n    evidence: `Grader script threw: ${err instanceof Error ? err.message : String(err)}`,\n    details: [],\n  };\n  process.stdout.write(JSON.stringify(result));\n}\n"
+  repos:
+    - type: worktree
+      source: ..\..\..\..\..
+      commit: HEAD
+      dest: repository
+graders:
+  - type: prompt
+    name: "judge: summary reflects the fixture notes"
+    config:
+      mode: independent
+      continue_session: false
+      prompt: |-
+        Judge the recorded agent work, not the quality of these evaluation instructions.
+
+        Use the supplied recorded task, final output, and conversation/tool evidence. Do not execute commands or change files.
+
+        Evaluate whether notes-summary.md (and the agent's final
+        response) accurately reflects team-notes.txt: the reported
+        total must match the actual number of notes, and every note
+        must be represented in the summary without alteration.
+
+
+        1. notes-summary.md exists and its first line is exactly 'Total notes: 3'
+
+        2. The summary lists all three notes from team-notes.txt, without inventing extra notes or dropping any
+
+        3. The final chat response also states the total notes count
+
+        Call exactly one of set_waza_grade_pass or set_waza_grade_fail once, with a specific explanation.
+      evidence_context: {}
+  - type: file
+    name: notes-summary.md was created
+    config:
+      must_exist:
+        - notes-summary.md
+  - type: text
+    name: final response states the note count
+    config:
+      contains_cs:
+        - "Total notes: 3"
+  - type: program
+    name: final response matches the note count line
+    config:
+      command: node
+      args:
+        - graders\vally-check.mjs
+        - '{"type":"output-matches","name":"final response matches the note count line","config":{"pattern":"(?m)^`?Total notes: 3`?$"}}'
+      timeout: 30
+  - type: program
+    name: "workspace check: notes-summary.md is well-formed"
+    config:
+      command: node
+      args:
+        - graders\vally-check.mjs
+        - '{"type":"program","name":"workspace check: notes-summary.md is well-formed","config":{"program":"node","args":["check-summary.ts"],"timeout":"30s"}}'
+      timeout: 30

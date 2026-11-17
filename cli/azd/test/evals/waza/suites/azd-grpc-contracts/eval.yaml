@@ -1,0 +1,23 @@
+schemaVersion: "2.0"
+name: azd-grpc-contracts
+scenario: azure-dev-vally-migration
+description: Can an agent inspect the stable and preview extension contracts, plan safe v1beta additions, and graduate compatible functionality into v1?
+config:
+  executor: copilot-sdk
+  model: gpt-5.6-terra
+  judge_model: gpt-5.6-terra
+  trials_per_task: 2
+  timeout_seconds: 480
+  parallel: false
+  inject_skill_body: false
+  skill_directories:
+    - ..\..\..\..\..\..\..\.github\skills\azd-grpc-contracts
+metrics:
+  - name: task_completion
+    weight: 1
+    threshold: 1
+    description: Native strict grader verdict; original suite thresholds are reported separately.
+tasks:
+  - tasks\inspect-contract-state.yaml
+  - tasks\add-preview-field.yaml
+  - tasks\graduate-beta-service.yaml

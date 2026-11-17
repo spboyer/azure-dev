@@ -1,0 +1,57 @@
+id: inspect-contract-state
+name: inspect-contract-state
+inputs:
+  prompt: Inspect the current azd extension protobuf contracts. Tell me which services are beta-only, summarize how v1 and v1beta compatibility is validated, and give me the fastest command to check the current cross-channel invariant. Do not change files.
+  repos:
+    - type: worktree
+      source: ..\..\..\..\..
+      commit: HEAD
+      dest: repository
+  workdir: repository
+graders:
+  - type: skill_invocation
+    name: azd grpc contracts skill activated
+    config:
+      required_skills:
+        - azd-grpc-contracts
+      mode: any_order
+      allow_extra: true
+  - type: program
+    name: reports beta-only services
+    config:
+      command: node
+      args:
+        - graders\vally-check.mjs
+        - '{"type":"output-matches","name":"reports beta-only services","config":{"pattern":"(?is)(?=.*ComposeService)(?=.*CopilotService)(?=.*CommandResultService)"}}'
+      timeout: 30
+  - type: text
+    name: names the cross-channel check
+    config:
+      contains_cs:
+        - make proto-version-compatibility
+  - type: program
+    name: inspection did not modify the repository
+    config:
+      command: node
+      args:
+        - graders\vally-check.mjs
+        - '{"type":"diff-empty","name":"inspection did not modify the repository","repository":"repository"}'
+      timeout: 30
+  - type: prompt
+    name: "judge: accurate current-state diagnosis"
+    config:
+      mode: independent
+      continue_session: false
+      prompt: |-
+        Judge the recorded agent work, not the quality of these evaluation instructions.
+
+        Use the supplied recorded task, final output, and conversation/tool evidence. Do not execute commands or change files.
+
+        1. Identifies beta-only services from the repository rather than assuming all services are shared
+
+        2. Explains that v1 must remain a compatible subset of v1beta
+
+        3. Names the dedicated local compatibility command
+
+        Call exactly one of set_waza_grade_pass or set_waza_grade_fail once, with a specific explanation.
+      evidence_context: {}

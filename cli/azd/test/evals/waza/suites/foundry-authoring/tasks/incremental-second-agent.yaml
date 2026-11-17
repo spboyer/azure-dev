@@ -1,0 +1,61 @@
+id: incremental-second-agent
+name: incremental-second-agent
+inputs:
+  prompt: Add a second hosted agent to this project called `escalation-agent`. It should live in src/escalation-agent and use the same Foundry project as the existing agent. Describe it as handling escalated tickets.
+  files:
+    - path: azure.yaml
+      content: "# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json\r\n\r\n# A minimal, healthy Foundry hosted-agent project.\r\nname: support-triage\r\n\r\nservices:\r\n  ai-project:\r\n    host: azure.ai.project\r\n    deployments:\r\n      - name: gpt-4o-mini\r\n        model:\r\n          format: OpenAI\r\n          name: gpt-4o-mini\r\n          version: \"2024-07-18\"\r\n        sku:\r\n          name: GlobalStandard\r\n          capacity: 50\r\n\r\n  triage-agent:\r\n    host: azure.ai.agent\r\n    project: ./src/triage-agent\r\n    uses:\r\n      - ai-project\r\n    kind: hosted\r\n    name: triage-agent\r\n    description: Triages inbound support tickets and routes them to the right queue.\r\n    runtime:\r\n      stack: python\r\n      version: \"3.12\"\r\n    startupCommand: python main.py\r\n"
+    - path: src/triage-agent/main.py
+      content: "import os\r\n\r\nfrom fastapi import FastAPI\r\nfrom pydantic import BaseModel\r\n\r\napp = FastAPI()\r\n\r\nQUEUES = [\"billing\", \"technical\", \"account\"]\r\n\r\n\r\nclass Ticket(BaseModel):\r\n    subject: str\r\n    body: str\r\n\r\n\r\n@app.get(\"/health\")\r\ndef health() -> dict[str, str]:\r\n    return {\"status\": \"ok\"}\r\n\r\n\r\n@app.post(\"/triage\")\r\ndef triage(ticket: Ticket) -> dict[str, str]:\r\n    \"\"\"Route a ticket to a queue. Placeholder logic -- the real agent calls the model.\"\"\"\r\n    endpoint = os.environ.get(\"FOUNDRY_PROJECT_ENDPOINT\", \"\")\r\n    queue = QUEUES[len(ticket.subject) % len(QUEUES)]\r\n    return {\"queue\": queue, \"endpoint_configured\": str(bool(endpoint))}\r\n"
+  follow_up_prompts:
+    - Now configure that new agent's environment in azure.yaml so it runs with debug-level logging. Don't change its application code.
+    - Good. What's the single command I'd run to deploy just that new agent, without touching the existing one?
+graders:
+  - type: program
+    name: the new agent service exists
+    config:
+      command: node
+      args:
+        - graders\vally-check.mjs
+        - '{"type":"file-matches","name":"the new agent service exists","config":{"path":"azure.yaml","pattern":"(?:^|\\n)  escalation-agent:[^\\n]*\\n(?:(?:[ \\t]{4,}[^\\n]*|[ \\t]*)\\n)*?[ \\t]{4,}host:[ \\t]*azure\\.ai\\.agent"}}'
+      timeout: 30
+  - type: program
+    name: debug logging configured on the new agent
+    config:
+      command: node
+      args:
+        - graders\vally-check.mjs
+        - '{"type":"file-matches","name":"debug logging configured on the new agent","config":{"path":"azure.yaml","pattern":"(?is)\\n  escalation-agent:(?:(?:[ \\t]{4,}[^\\n]*|[ \\t]*)\\n)*?[ \\t]{4,}[^\\n]*LOG_LEVEL[\\s\\S]{0,30}?debug"}}'
+      timeout: 30
+  - type: prompt
+    name: "judge: additive edits, correct scoped deploy"
+    config:
+      mode: independent
+      continue_session: false
+      prompt: |-
+        Judge the recorded agent work, not the quality of these evaluation instructions.
+
+        Use the supplied recorded task, final output, and conversation/tool evidence. Do not execute commands or change files.
+
+        1. escalation-agent is added as an azure.ai.agent service that uses the Foundry project
+
+        2. The existing triage-agent service is left intact
+
+        3. The debug log level is set through the agent's environment variables
+
+        4. The final answer names a deploy command scoped to the single service
+
+        Call exactly one of set_waza_grade_pass or set_waza_grade_fail once, with a specific explanation.
+      evidence_context: {}
+checkpoints:
+  - after_turn: 3
+    on_failure: continue
+    graders:
+      - type: program
+        name: final turn names a single-service deploy
+        config:
+          command: node
+          args:
+            - graders\vally-check.mjs
+            - '{"type":"output-matches","name":"final turn names a single-service deploy","turn":2,"config":{"pattern":"azd deploy\\s+escalation-agent"}}'
+          timeout: 30

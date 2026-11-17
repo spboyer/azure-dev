@@ -1,0 +1,38 @@
+id: environment-switch-env
+name: environment-switch-env
+inputs:
+  prompt: I have separate production and staging setups for my app. How do I switch which one I'm working against?
+  files:
+    - path: azure.yaml
+      content: "name: sample-app\r\nmetadata:\r\n  template: sample-app@0.0.1\r\nservices:\r\n  web:\r\n    project: ./src/web\r\n    host: appservice\r\n    language: js\r\n"
+    - path: .azure/config.json
+      content: "{\r\n    \"defaultEnvironment\": \"production\"\r\n}\r\n"
+    - path: .azure/production/.env
+      content: "AZURE_ENV_NAME=\"production\"\r\nAZURE_LOCATION=\"eastus2\"\r\nAZURE_SUBSCRIPTION_ID=\"00000000-0000-0000-0000-000000000000\"\r\nAZURE_RESOURCE_GROUP=\"rg-sample-production\"\r\n"
+    - path: .azure/staging/.env
+      content: "AZURE_ENV_NAME=\"staging\"\r\nAZURE_LOCATION=\"eastus2\"\r\nAZURE_SUBSCRIPTION_ID=\"00000000-0000-0000-0000-000000000000\"\r\nAZURE_RESOURCE_GROUP=\"rg-sample-staging\"\r\n"
+graders:
+  - type: program
+    name: suggests azd env select to switch
+    config:
+      command: node
+      args:
+        - graders\vally-check.mjs
+        - '{"type":"output-matches","name":"suggests azd env select to switch","config":{"pattern":"azd env select"}}'
+      timeout: 30
+  - type: prompt
+    name: "judge: does not suggest deleting or recreating environments"
+    config:
+      mode: independent
+      continue_session: false
+      prompt: |-
+        Judge the recorded agent work, not the quality of these evaluation instructions.
+
+        Use the supplied recorded task, final output, and conversation/tool evidence. Do not execute commands or change files.
+
+        1. Suggests azd env select to switch the active environment
+
+        2. Does not suggest deleting or recreating either environment
+
+        Call exactly one of set_waza_grade_pass or set_waza_grade_fail once, with a specific explanation.
+      evidence_context: {}

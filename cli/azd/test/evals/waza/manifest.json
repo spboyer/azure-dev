@@ -1,0 +1,786 @@
+{
+  "release": "0.41.0",
+  "experiments": [
+    {
+      "id": "azd",
+      "name": "azd-skills-baseline",
+      "source": "eval-azd.experiments.yaml",
+      "baseline": {
+        "skills": "without-skills",
+        "model": "claude-sonnet-5"
+      }
+    },
+    {
+      "id": "foundry",
+      "name": "foundry-skill-impact",
+      "source": "eval-foundry.experiments.yaml",
+      "baseline": {
+        "skills": "without-skill",
+        "model": "claude-sonnet-5"
+      }
+    }
+  ],
+  "suites": [
+    {
+      "name": "azd-deploy",
+      "source": "eval-azd-deploy.yaml",
+      "source_sha256": "4e3073fda336a7103bd0fc62ad40ee2d066e74f6cb63c7f0dad1e5710955633f",
+      "spec": "suites\\azd-deploy\\eval.yaml",
+      "model": "gpt-5.6-terra",
+      "judge_model": "gpt-5.6-luna",
+      "skills": [
+        "./skills/azd"
+      ],
+      "trials": 3,
+      "threshold": 0.5,
+      "task_ids": [
+        "deploy-node-api",
+        "deploy-python-webapp",
+        "environment-create-staging",
+        "environment-delete-env",
+        "environment-switch-env",
+        "lifecycle-full",
+        "lifecycle-teardown",
+        "deploy-existing-project"
+      ],
+      "graders": {
+        "deploy-node-api": [
+          "mentions azd as an option",
+          "judge: reasonable, correctly-sequenced guidance"
+        ],
+        "deploy-python-webapp": [
+          "mentions azd as an option",
+          "judge: reasonable, correctly-sequenced guidance"
+        ],
+        "environment-create-staging": [
+          "Talks about azd env new",
+          "judge: creates staging without destructive or redundant steps"
+        ],
+        "environment-delete-env": [
+          "recommends azd down to remove Azure resources",
+          "recommends azd env remove for local cleanup",
+          "judge: removes local environment after tearing down resources, without creating a new one"
+        ],
+        "environment-switch-env": [
+          "suggests azd env select to switch",
+          "judge: does not suggest deleting or recreating environments"
+        ],
+        "lifecycle-full": [
+          "judge: full lifecycle in the right order"
+        ],
+        "lifecycle-teardown": [
+          "recommends azd down to tear everything down",
+          "judge: does not suggest init or provision"
+        ],
+        "deploy-existing-project": [
+          "suggests azd deploy or azd up",
+          "judge: does not re-suggest init or delete the resource group"
+        ]
+      },
+      "requires_independent_judge": true,
+      "environment": {},
+      "experiment": null,
+      "variant": null
+    },
+    {
+      "name": "azd-grpc-contracts",
+      "source": "eval-azd-grpc-contracts.yaml",
+      "source_sha256": "3e66d986c8c9520d5bf73227401a99bb0f88bb712c99a7e4cf68e82d81fe1d4a",
+      "spec": "suites\\azd-grpc-contracts\\eval.yaml",
+      "model": "gpt-5.6-terra",
+      "judge_model": "gpt-5.6-terra",
+      "skills": [
+        "../../../../.github/skills/azd-grpc-contracts"
+      ],
+      "trials": 2,
+      "threshold": 0.8,
+      "task_ids": [
+        "inspect-contract-state",
+        "add-preview-field",
+        "graduate-beta-service"
+      ],
+      "graders": {
+        "inspect-contract-state": [
+          "azd grpc contracts skill activated",
+          "reports beta-only services",
+          "names the cross-channel check",
+          "inspection did not modify the repository",
+          "judge: accurate current-state diagnosis"
+        ],
+        "add-preview-field": [
+          "azd grpc contracts skill activated",
+          "requires focused override",
+          "keeps stable contract unchanged",
+          "planning did not modify the repository",
+          "judge: safe beta addition plan"
+        ],
+        "graduate-beta-service": [
+          "azd grpc contracts skill activated",
+          "preserves beta clients",
+          "flags accessor compatibility",
+          "graduation plan did not modify the repository",
+          "judge: safe graduation plan"
+        ]
+      },
+      "requires_independent_judge": true,
+      "environment": {},
+      "experiment": null,
+      "variant": null
+    },
+    {
+      "name": "azd-qna",
+      "source": "eval-azd-qna.yaml",
+      "source_sha256": "0a9a4725e7b43c3f19e99fe9ac0c2a3b61cc5ab4e79f47004853e80b04732c6f",
+      "spec": "suites\\azd-qna\\eval.yaml",
+      "model": "gpt-5.6-terra",
+      "judge_model": "gpt-5.6-luna",
+      "skills": [],
+      "trials": 3,
+      "threshold": 0.5,
+      "task_ids": [
+        "troubleshoot-auth-error",
+        "troubleshoot-config-error"
+      ],
+      "graders": {
+        "troubleshoot-auth-error": [
+          "identifies this as an auth problem",
+          "suggests a concrete auth fix"
+        ],
+        "troubleshoot-config-error": [
+          "identifies azure.yaml as the source of a YAML syntax issue",
+          "gives actionable guidance"
+        ]
+      },
+      "requires_independent_judge": false,
+      "environment": {},
+      "experiment": null,
+      "variant": null
+    },
+    {
+      "name": "foundry-authoring",
+      "source": "eval-foundry-authoring.yaml",
+      "source_sha256": "71b411f8d0d7a0335d65d1414e71f5e8b3cf11d512ff96c2a68e1c5e5a753d13",
+      "spec": "suites\\foundry-authoring\\eval.yaml",
+      "model": "gpt-5.6-terra",
+      "judge_model": "gpt-5.6-luna",
+      "skills": [],
+      "trials": 2,
+      "threshold": 0.7,
+      "task_ids": [
+        "migrate-legacy-agent-definition",
+        "incremental-second-agent"
+      ],
+      "graders": {
+        "migrate-legacy-agent-definition": [
+          "the nested config: block is gone",
+          "the definition was hoisted onto the service entry",
+          "environment variables survived the move",
+          "judge: complete migration with no behavior change"
+        ],
+        "incremental-second-agent": [
+          "the new agent service exists",
+          "debug logging configured on the new agent",
+          "final turn names a single-service deploy",
+          "judge: additive edits, correct scoped deploy"
+        ]
+      },
+      "requires_independent_judge": true,
+      "environment": {},
+      "experiment": null,
+      "variant": null
+    },
+    {
+      "name": "foundry-cli",
+      "source": "eval-foundry-cli.yaml",
+      "source_sha256": "7646384f0d8cda41173a66a3ef1463c473355949dbde5abff7e0ec518e894238",
+      "spec": "suites\\foundry-cli\\eval.yaml",
+      "model": "gpt-5.6-terra",
+      "judge_model": "gpt-5.6-luna",
+      "skills": [],
+      "trials": 1,
+      "threshold": 0.7,
+      "task_ids": [
+        "discover-command-surface",
+        "diagnose-broken-project"
+      ],
+      "graders": {
+        "discover-command-surface": [
+          "actually asks the CLI for help",
+          "reports real Foundry command groups",
+          "no destructive or mutating commands",
+          "judge: grounded, accurate command summary"
+        ],
+        "diagnose-broken-project": [
+          "runs the doctor diagnostic",
+          "no destructive or mutating commands",
+          "identifies the missing agent service",
+          "diagnosis did not modify the project",
+          "judge: accurate diagnosis with sensible next steps"
+        ]
+      },
+      "requires_independent_judge": true,
+      "environment": {
+        "NO_COLOR": "1",
+        "AZURE_DEV_COLLECT_TELEMETRY": "no"
+      },
+      "experiment": null,
+      "variant": null
+    },
+    {
+      "name": "foundry-skill",
+      "source": "eval-foundry-skill.yaml",
+      "source_sha256": "6bdc78ea461526ed41b1cafe5a19591ddd6ee57f6aee82752a405ad0d66e4753",
+      "spec": "suites\\foundry-skill\\eval.yaml",
+      "model": "gpt-5.6-terra",
+      "judge_model": "gpt-5.6-luna",
+      "skills": [
+        "./skills/.external/microsoft-foundry"
+      ],
+      "trials": 2,
+      "threshold": 0.7,
+      "task_ids": [
+        "route-optimize-instructions",
+        "rule-user-agent-inline"
+      ],
+      "graders": {
+        "route-optimize-instructions": [
+          "microsoft-foundry skill activated",
+          "reads the observe sub-skill",
+          "judge: eval-driven optimization guidance"
+        ],
+        "rule-user-agent-inline": [
+          "deploy command carries the skill user agent",
+          "does not persist the user agent",
+          "judge: correctly-sequenced, correctly-tagged commands"
+        ]
+      },
+      "requires_independent_judge": true,
+      "environment": {},
+      "experiment": null,
+      "variant": null
+    },
+    {
+      "name": "fixture-and-worktree-demo",
+      "source": "eval.yaml",
+      "source_sha256": "7d1b9e55d24a66736a73bc16f4730256519f4c74ccc0ff5016afe6ae71463df4",
+      "spec": "suites\\fixture-and-worktree-demo\\eval.yaml",
+      "model": "claude-sonnet-5",
+      "judge_model": "gpt-5.6-terra",
+      "skills": [],
+      "trials": 1,
+      "threshold": 1,
+      "task_ids": [
+        "fixture-notes-summary"
+      ],
+      "graders": {
+        "fixture-notes-summary": [
+          "judge: summary reflects the fixture notes",
+          "notes-summary.md was created",
+          "final response states the note count",
+          "final response matches the note count line",
+          "workspace check: notes-summary.md is well-formed"
+        ]
+      },
+      "requires_independent_judge": true,
+      "environment": {},
+      "experiment": null,
+      "variant": null
+    },
+    {
+      "name": "azd-skills-baseline--without-skills--claude-sonnet-5--azd-qna",
+      "source": "eval-azd-qna.yaml",
+      "source_sha256": "0a9a4725e7b43c3f19e99fe9ac0c2a3b61cc5ab4e79f47004853e80b04732c6f",
+      "spec": "suites\\azd--without-skills--claude-sonnet-5--azd-qna\\eval.yaml",
+      "model": "claude-sonnet-5",
+      "judge_model": "gpt-5.6-luna",
+      "skills": [],
+      "trials": 3,
+      "threshold": 0.5,
+      "task_ids": [
+        "troubleshoot-auth-error",
+        "troubleshoot-config-error"
+      ],
+      "graders": {
+        "troubleshoot-auth-error": [
+          "identifies this as an auth problem",
+          "suggests a concrete auth fix"
+        ],
+        "troubleshoot-config-error": [
+          "identifies azure.yaml as the source of a YAML syntax issue",
+          "gives actionable guidance"
+        ]
+      },
+      "requires_independent_judge": false,
+      "environment": {},
+      "experiment": "azd",
+      "variant": "without-skills--claude-sonnet-5"
+    },
+    {
+      "name": "azd-skills-baseline--without-skills--claude-sonnet-5--azd-deploy",
+      "source": "eval-azd-deploy.yaml",
+      "source_sha256": "4e3073fda336a7103bd0fc62ad40ee2d066e74f6cb63c7f0dad1e5710955633f",
+      "spec": "suites\\azd--without-skills--claude-sonnet-5--azd-deploy\\eval.yaml",
+      "model": "claude-sonnet-5",
+      "judge_model": "gpt-5.6-luna",
+      "skills": [],
+      "trials": 3,
+      "threshold": 0.5,
+      "task_ids": [
+        "deploy-node-api",
+        "deploy-python-webapp",
+        "environment-create-staging",
+        "environment-delete-env",
+        "environment-switch-env",
+        "lifecycle-full",
+        "lifecycle-teardown",
+        "deploy-existing-project"
+      ],
+      "graders": {
+        "deploy-node-api": [
+          "mentions azd as an option",
+          "judge: reasonable, correctly-sequenced guidance"
+        ],
+        "deploy-python-webapp": [
+          "mentions azd as an option",
+          "judge: reasonable, correctly-sequenced guidance"
+        ],
+        "environment-create-staging": [
+          "Talks about azd env new",
+          "judge: creates staging without destructive or redundant steps"
+        ],
+        "environment-delete-env": [
+          "recommends azd down to remove Azure resources",
+          "recommends azd env remove for local cleanup",
+          "judge: removes local environment after tearing down resources, without creating a new one"
+        ],
+        "environment-switch-env": [
+          "suggests azd env select to switch",
+          "judge: does not suggest deleting or recreating environments"
+        ],
+        "lifecycle-full": [
+          "judge: full lifecycle in the right order"
+        ],
+        "lifecycle-teardown": [
+          "recommends azd down to tear everything down",
+          "judge: does not suggest init or provision"
+        ],
+        "deploy-existing-project": [
+          "suggests azd deploy or azd up",
+          "judge: does not re-suggest init or delete the resource group"
+        ]
+      },
+      "requires_independent_judge": true,
+      "environment": {},
+      "experiment": "azd",
+      "variant": "without-skills--claude-sonnet-5"
+    },
+    {
+      "name": "azd-skills-baseline--without-skills--gpt-5.6-terra--azd-qna",
+      "source": "eval-azd-qna.yaml",
+      "source_sha256": "0a9a4725e7b43c3f19e99fe9ac0c2a3b61cc5ab4e79f47004853e80b04732c6f",
+      "spec": "suites\\azd--without-skills--gpt-5.6-terra--azd-qna\\eval.yaml",
+      "model": "gpt-5.6-terra",
+      "judge_model": "gpt-5.6-luna",
+      "skills": [],
+      "trials": 3,
+      "threshold": 0.5,
+      "task_ids": [
+        "troubleshoot-auth-error",
+        "troubleshoot-config-error"
+      ],
+      "graders": {
+        "troubleshoot-auth-error": [
+          "identifies this as an auth problem",
+          "suggests a concrete auth fix"
+        ],
+        "troubleshoot-config-error": [
+          "identifies azure.yaml as the source of a YAML syntax issue",
+          "gives actionable guidance"
+        ]
+      },
+      "requires_independent_judge": false,
+      "environment": {},
+      "experiment": "azd",
+      "variant": "without-skills--gpt-5.6-terra"
+    },
+    {
+      "name": "azd-skills-baseline--without-skills--gpt-5.6-terra--azd-deploy",
+      "source": "eval-azd-deploy.yaml",
+      "source_sha256": "4e3073fda336a7103bd0fc62ad40ee2d066e74f6cb63c7f0dad1e5710955633f",
+      "spec": "suites\\azd--without-skills--gpt-5.6-terra--azd-deploy\\eval.yaml",
+      "model": "gpt-5.6-terra",
+      "judge_model": "gpt-5.6-luna",
+      "skills": [],
+      "trials": 3,
+      "threshold": 0.5,
+      "task_ids": [
+        "deploy-node-api",
+        "deploy-python-webapp",
+        "environment-create-staging",
+        "environment-delete-env",
+        "environment-switch-env",
+        "lifecycle-full",
+        "lifecycle-teardown",
+        "deploy-existing-project"
+      ],
+      "graders": {
+        "deploy-node-api": [
+          "mentions azd as an option",
+          "judge: reasonable, correctly-sequenced guidance"
+        ],
+        "deploy-python-webapp": [
+          "mentions azd as an option",
+          "judge: reasonable, correctly-sequenced guidance"
+        ],
+        "environment-create-staging": [
+          "Talks about azd env new",
+          "judge: creates staging without destructive or redundant steps"
+        ],
+        "environment-delete-env": [
+          "recommends azd down to remove Azure resources",
+          "recommends azd env remove for local cleanup",
+          "judge: removes local environment after tearing down resources, without creating a new one"
+        ],
+        "environment-switch-env": [
+          "suggests azd env select to switch",
+          "judge: does not suggest deleting or recreating environments"
+        ],
+        "lifecycle-full": [
+          "judge: full lifecycle in the right order"
+        ],
+        "lifecycle-teardown": [
+          "recommends azd down to tear everything down",
+          "judge: does not suggest init or provision"
+        ],
+        "deploy-existing-project": [
+          "suggests azd deploy or azd up",
+          "judge: does not re-suggest init or delete the resource group"
+        ]
+      },
+      "requires_independent_judge": true,
+      "environment": {},
+      "experiment": "azd",
+      "variant": "without-skills--gpt-5.6-terra"
+    },
+    {
+      "name": "azd-skills-baseline--with-skills--claude-sonnet-5--azd-qna",
+      "source": "eval-azd-qna.yaml",
+      "source_sha256": "0a9a4725e7b43c3f19e99fe9ac0c2a3b61cc5ab4e79f47004853e80b04732c6f",
+      "spec": "suites\\azd--with-skills--claude-sonnet-5--azd-qna\\eval.yaml",
+      "model": "claude-sonnet-5",
+      "judge_model": "gpt-5.6-luna",
+      "skills": [
+        "./skills/azd"
+      ],
+      "trials": 3,
+      "threshold": 0.5,
+      "task_ids": [
+        "troubleshoot-auth-error",
+        "troubleshoot-config-error"
+      ],
+      "graders": {
+        "troubleshoot-auth-error": [
+          "identifies this as an auth problem",
+          "suggests a concrete auth fix"
+        ],
+        "troubleshoot-config-error": [
+          "identifies azure.yaml as the source of a YAML syntax issue",
+          "gives actionable guidance"
+        ]
+      },
+      "requires_independent_judge": false,
+      "environment": {},
+      "experiment": "azd",
+      "variant": "with-skills--claude-sonnet-5"
+    },
+    {
+      "name": "azd-skills-baseline--with-skills--claude-sonnet-5--azd-deploy",
+      "source": "eval-azd-deploy.yaml",
+      "source_sha256": "4e3073fda336a7103bd0fc62ad40ee2d066e74f6cb63c7f0dad1e5710955633f",
+      "spec": "suites\\azd--with-skills--claude-sonnet-5--azd-deploy\\eval.yaml",
+      "model": "claude-sonnet-5",
+      "judge_model": "gpt-5.6-luna",
+      "skills": [
+        "./skills/azd"
+      ],
+      "trials": 3,
+      "threshold": 0.5,
+      "task_ids": [
+        "deploy-node-api",
+        "deploy-python-webapp",
+        "environment-create-staging",
+        "environment-delete-env",
+        "environment-switch-env",
+        "lifecycle-full",
+        "lifecycle-teardown",
+        "deploy-existing-project"
+      ],
+      "graders": {
+        "deploy-node-api": [
+          "mentions azd as an option",
+          "judge: reasonable, correctly-sequenced guidance"
+        ],
+        "deploy-python-webapp": [
+          "mentions azd as an option",
+          "judge: reasonable, correctly-sequenced guidance"
+        ],
+        "environment-create-staging": [
+          "Talks about azd env new",
+          "judge: creates staging without destructive or redundant steps"
+        ],
+        "environment-delete-env": [
+          "recommends azd down to remove Azure resources",
+          "recommends azd env remove for local cleanup",
+          "judge: removes local environment after tearing down resources, without creating a new one"
+        ],
+        "environment-switch-env": [
+          "suggests azd env select to switch",
+          "judge: does not suggest deleting or recreating environments"
+        ],
+        "lifecycle-full": [
+          "judge: full lifecycle in the right order"
+        ],
+        "lifecycle-teardown": [
+          "recommends azd down to tear everything down",
+          "judge: does not suggest init or provision"
+        ],
+        "deploy-existing-project": [
+          "suggests azd deploy or azd up",
+          "judge: does not re-suggest init or delete the resource group"
+        ]
+      },
+      "requires_independent_judge": true,
+      "environment": {},
+      "experiment": "azd",
+      "variant": "with-skills--claude-sonnet-5"
+    },
+    {
+      "name": "azd-skills-baseline--with-skills--gpt-5.6-terra--azd-qna",
+      "source": "eval-azd-qna.yaml",
+      "source_sha256": "0a9a4725e7b43c3f19e99fe9ac0c2a3b61cc5ab4e79f47004853e80b04732c6f",
+      "spec": "suites\\azd--with-skills--gpt-5.6-terra--azd-qna\\eval.yaml",
+      "model": "gpt-5.6-terra",
+      "judge_model": "gpt-5.6-luna",
+      "skills": [
+        "./skills/azd"
+      ],
+      "trials": 3,
+      "threshold": 0.5,
+      "task_ids": [
+        "troubleshoot-auth-error",
+        "troubleshoot-config-error"
+      ],
+      "graders": {
+        "troubleshoot-auth-error": [
+          "identifies this as an auth problem",
+          "suggests a concrete auth fix"
+        ],
+        "troubleshoot-config-error": [
+          "identifies azure.yaml as the source of a YAML syntax issue",
+          "gives actionable guidance"
+        ]
+      },
+      "requires_independent_judge": false,
+      "environment": {},
+      "experiment": "azd",
+      "variant": "with-skills--gpt-5.6-terra"
+    },
+    {
+      "name": "azd-skills-baseline--with-skills--gpt-5.6-terra--azd-deploy",
+      "source": "eval-azd-deploy.yaml",
+      "source_sha256": "4e3073fda336a7103bd0fc62ad40ee2d066e74f6cb63c7f0dad1e5710955633f",
+      "spec": "suites\\azd--with-skills--gpt-5.6-terra--azd-deploy\\eval.yaml",
+      "model": "gpt-5.6-terra",
+      "judge_model": "gpt-5.6-luna",
+      "skills": [
+        "./skills/azd"
+      ],
+      "trials": 3,
+      "threshold": 0.5,
+      "task_ids": [
+        "deploy-node-api",
+        "deploy-python-webapp",
+        "environment-create-staging",
+        "environment-delete-env",
+        "environment-switch-env",
+        "lifecycle-full",
+        "lifecycle-teardown",
+        "deploy-existing-project"
+      ],
+      "graders": {
+        "deploy-node-api": [
+          "mentions azd as an option",
+          "judge: reasonable, correctly-sequenced guidance"
+        ],
+        "deploy-python-webapp": [
+          "mentions azd as an option",
+          "judge: reasonable, correctly-sequenced guidance"
+        ],
+        "environment-create-staging": [
+          "Talks about azd env new",
+          "judge: creates staging without destructive or redundant steps"
+        ],
+        "environment-delete-env": [
+          "recommends azd down to remove Azure resources",
+          "recommends azd env remove for local cleanup",
+          "judge: removes local environment after tearing down resources, without creating a new one"
+        ],
+        "environment-switch-env": [
+          "suggests azd env select to switch",
+          "judge: does not suggest deleting or recreating environments"
+        ],
+        "lifecycle-full": [
+          "judge: full lifecycle in the right order"
+        ],
+        "lifecycle-teardown": [
+          "recommends azd down to tear everything down",
+          "judge: does not suggest init or provision"
+        ],
+        "deploy-existing-project": [
+          "suggests azd deploy or azd up",
+          "judge: does not re-suggest init or delete the resource group"
+        ]
+      },
+      "requires_independent_judge": true,
+      "environment": {},
+      "experiment": "azd",
+      "variant": "with-skills--gpt-5.6-terra"
+    },
+    {
+      "name": "foundry-skill-impact--without-skill--claude-sonnet-5--foundry-authoring",
+      "source": "eval-foundry-authoring.yaml",
+      "source_sha256": "71b411f8d0d7a0335d65d1414e71f5e8b3cf11d512ff96c2a68e1c5e5a753d13",
+      "spec": "suites\\foundry--without-skill--claude-sonnet-5--foundry-authoring\\eval.yaml",
+      "model": "claude-sonnet-5",
+      "judge_model": "gpt-5.6-luna",
+      "skills": [],
+      "trials": 2,
+      "threshold": 0.7,
+      "task_ids": [
+        "migrate-legacy-agent-definition",
+        "incremental-second-agent"
+      ],
+      "graders": {
+        "migrate-legacy-agent-definition": [
+          "the nested config: block is gone",
+          "the definition was hoisted onto the service entry",
+          "environment variables survived the move",
+          "judge: complete migration with no behavior change"
+        ],
+        "incremental-second-agent": [
+          "the new agent service exists",
+          "debug logging configured on the new agent",
+          "final turn names a single-service deploy",
+          "judge: additive edits, correct scoped deploy"
+        ]
+      },
+      "requires_independent_judge": true,
+      "environment": {},
+      "experiment": "foundry",
+      "variant": "without-skill--claude-sonnet-5"
+    },
+    {
+      "name": "foundry-skill-impact--without-skill--gpt-5.6-terra--foundry-authoring",
+      "source": "eval-foundry-authoring.yaml",
+      "source_sha256": "71b411f8d0d7a0335d65d1414e71f5e8b3cf11d512ff96c2a68e1c5e5a753d13",
+      "spec": "suites\\foundry--without-skill--gpt-5.6-terra--foundry-authoring\\eval.yaml",
+      "model": "gpt-5.6-terra",
+      "judge_model": "gpt-5.6-luna",
+      "skills": [],
+      "trials": 2,
+      "threshold": 0.7,
+      "task_ids": [
+        "migrate-legacy-agent-definition",
+        "incremental-second-agent"
+      ],
+      "graders": {
+        "migrate-legacy-agent-definition": [
+          "the nested config: block is gone",
+          "the definition was hoisted onto the service entry",
+          "environment variables survived the move",
+          "judge: complete migration with no behavior change"
+        ],
+        "incremental-second-agent": [
+          "the new agent service exists",
+          "debug logging configured on the new agent",
+          "final turn names a single-service deploy",
+          "judge: additive edits, correct scoped deploy"
+        ]
+      },
+      "requires_independent_judge": true,
+      "environment": {},
+      "experiment": "foundry",
+      "variant": "without-skill--gpt-5.6-terra"
+    },
+    {
+      "name": "foundry-skill-impact--with-skill--claude-sonnet-5--foundry-authoring",
+      "source": "eval-foundry-authoring.yaml",
+      "source_sha256": "71b411f8d0d7a0335d65d1414e71f5e8b3cf11d512ff96c2a68e1c5e5a753d13",
+      "spec": "suites\\foundry--with-skill--claude-sonnet-5--foundry-authoring\\eval.yaml",
+      "model": "claude-sonnet-5",
+      "judge_model": "gpt-5.6-luna",
+      "skills": [
+        "./skills/.external/microsoft-foundry"
+      ],
+      "trials": 2,
+      "threshold": 0.7,
+      "task_ids": [
+        "migrate-legacy-agent-definition",
+        "incremental-second-agent"
+      ],
+      "graders": {
+        "migrate-legacy-agent-definition": [
+          "the nested config: block is gone",
+          "the definition was hoisted onto the service entry",
+          "environment variables survived the move",
+          "judge: complete migration with no behavior change"
+        ],
+        "incremental-second-agent": [
+          "the new agent service exists",
+          "debug logging configured on the new agent",
+          "final turn names a single-service deploy",
+          "judge: additive edits, correct scoped deploy"
+        ]
+      },
+      "requires_independent_judge": true,
+      "environment": {},
+      "experiment": "foundry",
+      "variant": "with-skill--claude-sonnet-5"
+    },
+    {
+      "name": "foundry-skill-impact--with-skill--gpt-5.6-terra--foundry-authoring",
+      "source": "eval-foundry-authoring.yaml",
+      "source_sha256": "71b411f8d0d7a0335d65d1414e71f5e8b3cf11d512ff96c2a68e1c5e5a753d13",
+      "spec": "suites\\foundry--with-skill--gpt-5.6-terra--foundry-authoring\\eval.yaml",
+      "model": "gpt-5.6-terra",
+      "judge_model": "gpt-5.6-luna",
+      "skills": [
+        "./skills/.external/microsoft-foundry"
+      ],
+      "trials": 2,
+      "threshold": 0.7,
+      "task_ids": [
+        "migrate-legacy-agent-definition",
+        "incremental-second-agent"
+      ],
+      "graders": {
+        "migrate-legacy-agent-definition": [
+          "the nested config: block is gone",
+          "the definition was hoisted onto the service entry",
+          "environment variables survived the move",
+          "judge: complete migration with no behavior change"
+        ],
+        "incremental-second-agent": [
+          "the new agent service exists",
+          "debug logging configured on the new agent",
+          "final turn names a single-service deploy",
+          "judge: additive edits, correct scoped deploy"
+        ]
+      },
+      "requires_independent_judge": true,
+      "environment": {},
+      "experiment": "foundry",
+      "variant": "with-skill--gpt-5.6-terra"
+    }
+  ]
+}

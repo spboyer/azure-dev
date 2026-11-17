@@ -1,0 +1,18 @@
+{
+  "name": "azd-waza-dogfood",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "convert": "node scripts/convert.mjs",
+    "preflight": "node scripts/run.mjs --preflight",
+    "eval": "node scripts/run.mjs",
+    "experiment:azd": "node scripts/run.mjs --experiment azd",
+    "experiment:foundry": "node scripts/run.mjs --experiment foundry",
+    "compare": "node scripts/compare.mjs",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "yaml": "2.9.1"
+  }
+}

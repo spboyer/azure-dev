@@ -1,0 +1,44 @@
+id: rule-user-agent-inline
+name: rule-user-agent-inline
+inputs:
+  prompt: I have a hosted Foundry agent in this project. Give me the exact terminal commands to deploy it and then send it a test message. Don't run anything yet -- I want to review the commands first.
+  files:
+    - path: azure.yaml
+      content: "# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json\r\n\r\n# A minimal, healthy Foundry hosted-agent project.\r\nname: support-triage\r\n\r\nservices:\r\n  ai-project:\r\n    host: azure.ai.project\r\n    deployments:\r\n      - name: gpt-4o-mini\r\n        model:\r\n          format: OpenAI\r\n          name: gpt-4o-mini\r\n          version: \"2024-07-18\"\r\n        sku:\r\n          name: GlobalStandard\r\n          capacity: 50\r\n\r\n  triage-agent:\r\n    host: azure.ai.agent\r\n    project: ./src/triage-agent\r\n    uses:\r\n      - ai-project\r\n    kind: hosted\r\n    name: triage-agent\r\n    description: Triages inbound support tickets and routes them to the right queue.\r\n    runtime:\r\n      stack: python\r\n      version: \"3.12\"\r\n    startupCommand: python main.py\r\n"
+    - path: src/triage-agent/main.py
+      content: "import os\r\n\r\nfrom fastapi import FastAPI\r\nfrom pydantic import BaseModel\r\n\r\napp = FastAPI()\r\n\r\nQUEUES = [\"billing\", \"technical\", \"account\"]\r\n\r\n\r\nclass Ticket(BaseModel):\r\n    subject: str\r\n    body: str\r\n\r\n\r\n@app.get(\"/health\")\r\ndef health() -> dict[str, str]:\r\n    return {\"status\": \"ok\"}\r\n\r\n\r\n@app.post(\"/triage\")\r\ndef triage(ticket: Ticket) -> dict[str, str]:\r\n    \"\"\"Route a ticket to a queue. Placeholder logic -- the real agent calls the model.\"\"\"\r\n    endpoint = os.environ.get(\"FOUNDRY_PROJECT_ENDPOINT\", \"\")\r\n    queue = QUEUES[len(ticket.subject) % len(QUEUES)]\r\n    return {\"queue\": queue, \"endpoint_configured\": str(bool(endpoint))}\r\n"
+graders:
+  - type: program
+    name: deploy command carries the skill user agent
+    config:
+      command: node
+      args:
+        - graders\vally-check.mjs
+        - '{"type":"output-matches","name":"deploy command carries the skill user agent","config":{"pattern":"AZURE_DEV_USER_AGENT=microsoft_foundry_skill[ \\t]+(?:\\\\[ \\t]*\\n[ \\t]*)?azd[ \\t]+deploy"}}'
+      timeout: 30
+  - type: program
+    name: does not persist the user agent
+    config:
+      command: node
+      args:
+        - graders\vally-check.mjs
+        - '{"type":"output-not-matches","name":"does not persist the user agent","config":{"pattern":"(?m)^\\s*(?:azd env set|export)\\s+AZURE_DEV_USER_AGENT"}}'
+      timeout: 30
+  - type: prompt
+    name: "judge: correctly-sequenced, correctly-tagged commands"
+    config:
+      mode: independent
+      continue_session: false
+      prompt: |-
+        Judge the recorded agent work, not the quality of these evaluation instructions.
+
+        Use the supplied recorded task, final output, and conversation/tool evidence. Do not execute commands or change files.
+
+        1. The commands given to run are each prefixed inline with AZURE_DEV_USER_AGENT=microsoft_foundry_skill
+
+        2. The variable is not persisted via azd env set, .env, or azure.yaml
+
+        3. Deploy comes before invoking the agent
+
+        Call exactly one of set_waza_grade_pass or set_waza_grade_fail once, with a specific explanation.
+      evidence_context: {}
